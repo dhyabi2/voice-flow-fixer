@@ -283,13 +283,34 @@ export class VoiceService {
   // Private methods
   private async processUserMessage(text: string): Promise<void> {
     try {
-      console.log('🎯 Processing user message:', text);
       this.updateState({ isProcessing: true });
-      debugLogger.info('VOICE_SERVICE', 'Processing user message', { text });
-
-      console.log('🌐 Calling OpenRouter API...');
-      const response = await this.callOpenRouter(text);
-      console.log('✅ OpenRouter response received:', response);
+      
+      // Import nurse service for healthcare-focused AI
+      const { nurseService } = await import('./nurseService');
+      
+      // Extract symptoms and assess urgency
+      const symptoms = nurseService.extractSymptoms(text);
+      const urgencyLevel = nurseService.assessUrgencyLevel(text);
+      
+      // Search for relevant medical knowledge
+      let medicalKnowledge = [];
+      if (symptoms.length > 0) {
+        medicalKnowledge = await nurseService.searchMedicalKnowledge(symptoms);
+      }
+      
+      // Generate healthcare-focused prompt
+      const nursePrompt = nurseService.generateNursePrompt(text, undefined, medicalKnowledge);
+      
+      // Call OpenRouter with nurse-specific prompt
+      const response = await this.callOpenRouter(nursePrompt);
+      
+      // Log the interaction
+      await nurseService.logInteraction({
+        interaction_type: 'voice_chat',
+        transcript: text,
+        summary: response.substring(0, 200),
+        urgency_level: urgencyLevel
+      });
       
       const assistantMessage: VoiceMessage = {
         id: crypto.randomUUID(),
@@ -299,20 +320,12 @@ export class VoiceService {
         language: this.currentState.currentLanguage
       };
       
-      console.log('📤 Sending assistant message to listeners:', assistantMessage);
       this.messageListeners.forEach(listener => listener(assistantMessage));
-      
-      // Speak the response
-      console.log('🔊 Starting speech synthesis...');
       await this.speakText(response);
-      console.log('✅ Speech synthesis completed');
-      
       this.updateState({ isProcessing: false });
-      debugLogger.info('VOICE_SERVICE', 'Message processed successfully');
 
     } catch (error) {
       console.error('❌ Failed to process user message:', error);
-      debugLogger.error('VOICE_SERVICE', 'Failed to process user message', { error });
       this.updateState({ 
         error: 'Failed to process your message. Please try again.',
         isProcessing: false 

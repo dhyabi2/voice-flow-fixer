@@ -14,7 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      medical_knowledge: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          medications: string[] | null
+          prevention_tips: string[] | null
+          severity_level: string | null
+          symptoms: string[] | null
+          tags: string[] | null
+          title: string
+          treatments: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          medications?: string[] | null
+          prevention_tips?: string[] | null
+          severity_level?: string | null
+          symptoms?: string[] | null
+          tags?: string[] | null
+          title: string
+          treatments?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          medications?: string[] | null
+          prevention_tips?: string[] | null
+          severity_level?: string | null
+          symptoms?: string[] | null
+          tags?: string[] | null
+          title?: string
+          treatments?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      nurse_interactions: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          interaction_type: string
+          patient_id: string | null
+          recommendations: string[] | null
+          summary: string | null
+          transcript: string | null
+          urgency_level: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          interaction_type: string
+          patient_id?: string | null
+          recommendations?: string[] | null
+          summary?: string | null
+          transcript?: string | null
+          urgency_level?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          interaction_type?: string
+          patient_id?: string | null
+          recommendations?: string[] | null
+          summary?: string | null
+          transcript?: string | null
+          urgency_level?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nurse_interactions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      patients: {
+        Row: {
+          address: string | null
+          age: number
+          allergies: string[] | null
+          blood_type: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          current_medications: string[] | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          gender: string
+          id: string
+          last_visit_date: string | null
+          medical_history: string[] | null
+          name: string
+          next_appointment: string | null
+          notes: string | null
+          patient_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          age: number
+          allergies?: string[] | null
+          blood_type?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          current_medications?: string[] | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          gender: string
+          id?: string
+          last_visit_date?: string | null
+          medical_history?: string[] | null
+          name: string
+          next_appointment?: string | null
+          notes?: string | null
+          patient_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          age?: number
+          allergies?: string[] | null
+          blood_type?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          current_medications?: string[] | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          gender?: string
+          id?: string
+          last_visit_date?: string | null
+          medical_history?: string[] | null
+          name?: string
+          next_appointment?: string | null
+          notes?: string | null
+          patient_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
