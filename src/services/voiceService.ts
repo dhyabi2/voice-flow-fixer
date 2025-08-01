@@ -65,12 +65,12 @@ export class VoiceService {
     };
 
     this.openRouterConfig = {
-      apiKey: localStorage.getItem('openrouter-api-key') || '',
+      apiKey: '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',
       model: 'meta-llama/llama-3.1-8b-instruct:free',
       baseUrl: 'https://openrouter.ai/api/v1'
     };
     
-    console.log('🚀 VoiceService constructor - API key from localStorage:', this.openRouterConfig.apiKey ? '✅ Present' : '❌ Missing');
+    console.log('🚀 VoiceService constructor - API key set:', this.openRouterConfig.apiKey ? '✅ Present' : '❌ Missing');
     
     this.synthesis = window.speechSynthesis;
     this.initializeSpeechRecognition();
