@@ -1,6 +1,7 @@
 // Enhanced Voice Service with ElevenLabs support for better voice quality
 import { VoiceState, VoiceMessage } from '@/types/voice';
 import { debugLogger } from '@/utils/debugLogger';
+import { OmanHealthcareService } from './omanHealthcareService';
 
 // Enhanced voice configuration
 interface EnhancedVoiceConfig {
@@ -562,7 +563,7 @@ export class EnhancedVoiceService {
     });
   }
 
-  // Process user message (same as original but with enhanced logging)
+  // Process user message with enhanced healthcare awareness
   private async processUserMessage(text: string): Promise<void> {
     try {
       this.updateState({ isProcessing: true });
@@ -578,11 +579,33 @@ export class EnhancedVoiceService {
       if (symptoms.length > 0) {
         medicalKnowledge = await nurseService.searchMedicalKnowledge(symptoms);
       }
+
+      // Get real-time Oman healthcare information if medical query detected
+      let healthcareInfo = '';
+      const medicalKeywords = [
+        'مستشفى', 'طبيب', 'دكتور', 'علاج', 'دواء', 'مركز', 'صحة', 'عيادة', 'طوارئ',
+        'hospital', 'doctor', 'medicine', 'treatment', 'health', 'clinic', 'emergency'
+      ];
+      
+      const isHealthcareQuery = medicalKeywords.some(keyword => 
+        text.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      if (isHealthcareQuery) {
+        try {
+          healthcareInfo = await OmanHealthcareService.getRealtimeHealthcareInfo(
+            text, 
+            this.currentState.currentLanguage
+          );
+        } catch (error) {
+          debugLogger.warn('ENHANCED_VOICE', 'Failed to get healthcare info', { error });
+        }
+      }
       
       const nursePrompt = nurseService.generateNursePrompt(text, undefined, medicalKnowledge);
       
-      // Enhanced AI call with better error handling
-      const response = await this.callEnhancedAI(nursePrompt);
+      // Enhanced AI call with healthcare context
+      const response = await this.callEnhancedAI(nursePrompt, healthcareInfo);
       
       await nurseService.logInteraction({
         interaction_type: 'voice_chat',
@@ -612,7 +635,7 @@ export class EnhancedVoiceService {
     }
   }
 
-  private async callEnhancedAI(text: string): Promise<string> {
+  private async callEnhancedAI(text: string, healthcareContext?: string): Promise<string> {
     // Reuse the OpenRouter configuration from the original service
     const openRouterConfig = {
       apiKey: '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',
@@ -637,8 +660,8 @@ export class EnhancedVoiceService {
         : genderSpecificTerms;
 
       const systemPrompt = this.currentState.currentLanguage === 'ar' 
-        ? `انت الممرضة أميرة من عُمان. تكلم باللهجة الخليجية العُمانية والإماراتية. ${userContext} استخدم كلمات مثل: "شحالَك؟" "شحالِش؟" "واجد زين" "خلاص جي" "يلا نمشي" "ما موجود" "صدق؟" "وايد عليك" "وايد عليش" "هالشي" "بعدين نشوف" "والله زين" "عادي" "يعني أيش؟" "أكيد" "طبعاً" "هنا" "أي دعوى؟" "أيش مالك؟" "تسلم" "الله يعافيك" "مشكور" "أدري" "ما أعرف" "ممكن" "زين" "أختي" "أخوي" "حبيبي" "هلا والله" "أهلين" "مرحبا" "صباح الخير" "تصبح على خير". جاوب في جملة وحدة.`
-        : `You are Nurse Amira from Oman/UAE. Speak using Gulf dialect. ${userContext} Use terms like: "khalas", "yalla", "wayid", "ma shi", "zain", "habibi", "akeed", "tab3an", "hna", "ay da3wa", "aish malek", "tislam", "allah ya3afeek", "mashkoor", "adri", "ma a3raf", "mumkin", "zain", "ukhti", "akhooya", "habeebi", "ahlan wa sahlan". One sentence only.`;
+        ? `انت الممرضة أميرة من عُمان. تكلم باللهجة الخليجية العُمانية والإماراتية. ${userContext} استخدم كلمات مثل: "شحالَك؟" "شحالِش؟" "واجد زين" "خلاص جي" "يلا نمشي" "ما موجود" "صدق؟" "وايد عليك" "وايد عليش" "هالشي" "بعدين نشوف" "والله زين" "عادي" "يعني أيش؟" "أكيد" "طبعاً" "هنا" "أي دعوى؟" "أيش مالك؟" "تسلم" "الله يعافيك" "مشكور" "أدري" "ما أعرف" "ممكن" "زين" "أختي" "أخوي" "حبيبي" "هلا والله" "أهلين" "مرحبا" "صباح الخير" "تصبح على خير". اجبي على الأسئلة الطبية بمعلومات مفيدة وتشمل أسماء الأدوية الشائعة مثل البنادول، الأدفيل، والأسبرين للصداع. اذكري المستشفيات والمراكز الصحية في عُمان مثل مستشفى السلطان قابوس الجامعي، مستشفى خولة، ومراكز صحة الولايات. كوني مفيدة ولكن انصحي بمراجعة الطبيب للحالات الخطيرة. ${healthcareContext ? `معلومات إضافية: ${healthcareContext}` : ''} جاوب في جملة وحدة.`
+        : `You are Nurse Amira from Oman/UAE. Speak using Gulf dialect. ${userContext} Use terms like: "khalas", "yalla", "wayid", "ma shi", "zain", "habibi", "akeed", "tab3an", "hna", "ay da3wa", "aish malek", "tislam", "allah ya3afeek", "mashkoor", "adri", "ma a3raf", "mumkin", "zain", "ukhti", "akhooya", "habeebi", "ahlan wa sahlan". Answer medical questions with helpful information including common medication names like Panadol, Advil, Aspirin for headaches. Mention Oman hospitals and health centers like Sultan Qaboos University Hospital, Khoula Hospital, and Wilayat health centers. Be helpful but advise seeing a doctor for serious conditions. ${healthcareContext ? `Additional info: ${healthcareContext}` : ''} One sentence only.`;
 
       const response = await fetch(`${openRouterConfig.baseUrl}/chat/completions`, {
         method: 'POST',
