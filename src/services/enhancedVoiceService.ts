@@ -350,7 +350,28 @@ export class EnhancedVoiceService {
       });
 
       if (!response.ok) {
-        debugLogger.warn('ENHANCED_VOICE', 'ElevenLabs API failed', { status: response.status });
+        const errorData = await response.json().catch(() => null);
+        
+        if (response.status === 401) {
+          if (errorData?.detail?.message?.includes('missing_permissions')) {
+            console.error('🚨 ElevenLabs API Key Error: Missing text_to_speech permission');
+            this.updateState({ 
+              error: 'ElevenLabs API key lacks text-to-speech permission. Using browser voice instead.' 
+            });
+          } else {
+            console.error('🚨 ElevenLabs API Key Error: Invalid or expired API key');
+            this.updateState({ 
+              error: 'Invalid ElevenLabs API key. Using browser voice instead.' 
+            });
+          }
+        } else {
+          console.error('🚨 ElevenLabs API Error:', response.status, errorData);
+        }
+        
+        debugLogger.warn('ENHANCED_VOICE', 'ElevenLabs API failed', { 
+          status: response.status,
+          error: errorData 
+        });
         return false;
       }
 
