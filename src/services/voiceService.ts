@@ -1,4 +1,5 @@
 import { VoiceState, VoiceMessage, VoiceConfig, PipecatConfig } from '@/types/voice';
+import { debugLogger } from '@/utils/debugLogger';
 
 export class VoiceService {
   private mediaRecorder: MediaRecorder | null = null;
@@ -36,6 +37,7 @@ export class VoiceService {
       voice: 'en-US-Journey-D',
       language: 'en'
     };
+    debugLogger.info('VOICE_SERVICE', 'VoiceService initialized', { config: this.config });
   }
 
   // State management
