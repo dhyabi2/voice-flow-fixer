@@ -439,10 +439,30 @@ export class EnhancedVoiceService {
           });
         }
         
-        // Third try: any voice of target language (last resort)
+        // Third try: CROSS-LANGUAGE FEMALE FALLBACK - use English female for Arabic if needed
+        if (!selectedVoice && targetLang === 'ar') {
+          console.log('⚠️ No Arabic female voice found, trying English female voices...');
+          selectedVoice = voices.find(voice => {
+            const isEnglish = voice.lang.includes('en');
+            const isFemale = femaleVoicePatterns.some(pattern => 
+              voice.name.toLowerCase().includes(pattern)
+            );
+            const isMale = maleVoicePatterns.some(pattern => 
+              voice.name.toLowerCase().includes(pattern)
+            );
+            return isEnglish && isFemale && !isMale;
+          });
+          
+          if (selectedVoice) {
+            console.log('✅ Using English female voice for Arabic text:', selectedVoice.name);
+          }
+        }
+        
+        // Fourth try: REFUSE to use male voices - show error instead
         if (!selectedVoice) {
-          console.log('⚠️ No non-male voice found, using any available voice...');
-          selectedVoice = voices.find(voice => voice.lang.includes(targetLang));
+          console.error('🚨 NO FEMALE VOICES AVAILABLE - REFUSING TO USE MALE VOICE');
+          // Don't set selectedVoice - this will cause the utterance to use default
+          // which might be better than forcing a male voice
         }
         
         if (selectedVoice) {
@@ -472,9 +492,13 @@ export class EnhancedVoiceService {
           
           if (isMale) {
             console.error('🚨 CRITICAL: MALE VOICE SELECTED - THIS IS A BUG!');
+            // OVERRIDE: Don't use male voice, use default instead
+            utterance.voice = null;
+            console.log('🔄 OVERRIDING MALE VOICE - Using browser default');
           }
         } else {
           console.error('⚠️ No suitable voice found for language:', targetLang);
+          console.log('🔄 Using browser default voice');
         }
         
         // Enhanced speech settings
