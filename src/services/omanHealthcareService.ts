@@ -174,7 +174,7 @@ export class OmanHealthcareService {
     }
   }
 
-  private static getFallbackHealthcareInfo(query: string, language: 'ar' | 'en'): string {
+  public static getFallbackHealthcareInfo(query: string, language: 'ar' | 'en'): string {
     const lowerQuery = query.toLowerCase();
     
     // Search for relevant facilities
@@ -273,4 +273,23 @@ export class OmanHealthcareService {
       hospital.location.includes('مسقط') || hospital.location.includes('Muscat')
     );
   }
+}
+
+export async function getOmanHealthcareContext(): Promise<string> {
+  try {
+    const response = await fetch('https://ngbuewhihzcgoczqshwu.supabase.co/functions/v1/perplexity-healthcare-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'current Oman healthcare facilities and medical services' })
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.context || OmanHealthcareService.getFallbackHealthcareInfo('general healthcare info', 'en');
+    }
+  } catch (error) {
+    console.warn('Failed to get real-time healthcare context, using static data');
+  }
+  
+  return OmanHealthcareService.getFallbackHealthcareInfo('general healthcare info', 'en');
 }

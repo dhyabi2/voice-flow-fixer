@@ -1,7 +1,8 @@
 // Enhanced Voice Service with ElevenLabs support for better voice quality
 import { VoiceState, VoiceMessage } from '@/types/voice';
 import { debugLogger } from '@/utils/debugLogger';
-import { OmanHealthcareService } from './omanHealthcareService';
+import { getOmanHealthcareContext } from './omanHealthcareService';
+import { memoryService } from './memoryService';
 
 // Enhanced voice configuration
 interface EnhancedVoiceConfig {
@@ -593,10 +594,7 @@ export class EnhancedVoiceService {
 
       if (isHealthcareQuery) {
         try {
-          healthcareInfo = await OmanHealthcareService.getRealtimeHealthcareInfo(
-            text, 
-            this.currentState.currentLanguage
-          );
+          healthcareInfo = await getOmanHealthcareContext();
         } catch (error) {
           debugLogger.warn('ENHANCED_VOICE', 'Failed to get healthcare info', { error });
         }

@@ -9,6 +9,7 @@ interface VoiceButtonProps {
   isConnected: boolean;
   onClick: () => void;
   className?: string;
+  fullWidth?: boolean;
 }
 
 export function VoiceButton({ 
@@ -16,7 +17,8 @@ export function VoiceButton({
   isProcessing, 
   isConnected, 
   onClick, 
-  className 
+  className,
+  fullWidth = false
 }: VoiceButtonProps) {
   const getVariant = () => {
     if (isRecording) return 'voice-active';
@@ -41,17 +43,28 @@ export function VoiceButton({
   return (
     <Button
       variant={getVariant()}
-      size="voice-icon"
+      size={fullWidth ? "lg" : "voice-icon"}
       onClick={onClick}
       disabled={isProcessing}
       className={cn(
-        "relative overflow-hidden",
+        "relative overflow-hidden transition-all duration-300",
         isRecording && "voice-pulse",
+        fullWidth && "w-full h-14 text-lg font-bold shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]",
+        !fullWidth && "w-12 h-12",
         className
       )}
       title={getTitle()}
     >
-      {getIcon()}
+      <div className="flex items-center gap-3">
+        {getIcon()}
+        {fullWidth && (
+          <span className="hidden sm:block font-bold">
+            {isProcessing ? 'Processing...' : 
+             isRecording ? 'Stop Recording' : 
+             !isConnected ? 'Connect' : 'Start Recording'}
+          </span>
+        )}
+      </div>
       
       {/* Voice level indicator */}
       {isRecording && (

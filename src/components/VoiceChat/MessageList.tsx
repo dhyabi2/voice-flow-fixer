@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { VoiceMessage } from '@/types/voice';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Volume2, Copy, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,32 @@ interface MessageListProps {
 
 export function MessageList({ messages, onTranslate, className }: MessageListProps) {
   const { toast } = useToast();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to latest content when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+    }
+  }, [messages]);
+
+  // Also ensure scroll on mount if messages exist
+  useEffect(() => {
+    if (messages.length > 0 && messagesEndRef.current) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ 
+          behavior: 'auto',
+          block: 'end',
+          inline: 'nearest'
+        });
+      }, 100);
+    }
+  }, []);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -62,8 +89,9 @@ export function MessageList({ messages, onTranslate, className }: MessageListPro
   }
 
   return (
-    <div className={cn("space-y-4 max-h-96 overflow-y-auto", className)}>
-      {messages.map((message) => (
+    <ScrollArea className={cn("h-full", className)} ref={scrollAreaRef}>
+      <div className="space-y-4 p-4">
+        {messages.map((message) => (
         <Card 
           key={message.id} 
           className={cn(
@@ -143,7 +171,10 @@ export function MessageList({ messages, onTranslate, className }: MessageListPro
             </div>
           </CardContent>
         </Card>
-      ))}
-    </div>
+        ))}
+        {/* Invisible element to scroll to */}
+        <div ref={messagesEndRef} className="h-1" />
+      </div>
+    </ScrollArea>
   );
 }

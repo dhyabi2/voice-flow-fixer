@@ -49,7 +49,9 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
     switchLanguage,
     clearMessages,
     canRecord,
-    setElevenLabsApiKey
+    setElevenLabsApiKey,
+    setUserInfo,
+    setPatientContext
   } = useVoiceChat();
 
   const { t, isRTL } = useTranslation(state.currentLanguage);
@@ -118,9 +120,8 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
     try {
       await connect();
       if (userName && userGender) {
-        // Pass user info to the voice service via the enhanced voice service
-        const { enhancedVoiceService } = await import('@/services/enhancedVoiceService');
-        enhancedVoiceService.setUserInfo(userName, userGender);
+        // Set user info for all services
+        setUserInfo(userName, userGender);
       }
       toast.success(t('Connected to Nurse Amira'));
     } catch (error) {
@@ -135,6 +136,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
 
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
+    setPatientContext(patient);
     setShowPatients(false);
     toast.success(`${t('Selected patient:')} ${patient.name}`);
   };

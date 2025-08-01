@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { EnhancedVoiceService } from '@/services/enhancedVoiceService';
 import { translationService } from '@/services/translationService';
+import { VoiceState, VoiceMessage } from '@/types/voice';
+import { useToast } from '@/hooks/use-toast';
+import { debugLogger } from '@/utils/debugLogger';
+import { enhancedVoiceService } from '@/services/enhancedVoiceService';
+import { memoryService } from '@/services/memoryService';
+import { conversationLogger } from '@/services/conversationLogger';
 
 // Initialize the enhanced voice service with ElevenLabs support
 const voiceService = new EnhancedVoiceService();
-import { VoiceState, VoiceMessage } from '@/types/voice';
-import { useToast } from '@/hooks/use-toast';
 
 export function useVoiceChat() {
   const [state, setState] = useState<VoiceState>(() => voiceService.getState());
@@ -15,6 +19,13 @@ export function useVoiceChat() {
   
   const stateUnsubscribeRef = useRef<(() => void) | null>(null);
   const messageUnsubscribeRef = useRef<(() => void) | null>(null);
+
+  const addMessage = useCallback((message: VoiceMessage) => {
+    setMessages(prev => [...prev, message]);
+    
+    // Add to memory service for context and logging
+    memoryService.addMessage(message);
+  }, []);
 
   // Initialize voice service
   const initialize = useCallback(async () => {
@@ -150,6 +161,7 @@ export function useVoiceChat() {
   // Clear messages
   const clearMessages = useCallback(() => {
     setMessages([]);
+    memoryService.clearSessionHistory();
     
     toast({
       title: "Messages Cleared",
@@ -167,6 +179,15 @@ export function useVoiceChat() {
     });
   }, [toast]);
 
+  const setUserInfo = useCallback((name: string, gender: 'male' | 'female') => {
+    voiceService.setUserInfo(name, gender);
+    conversationLogger.setUserInfo(name, gender);
+  }, []);
+
+  const setPatientContext = useCallback((patient: any) => {
+    conversationLogger.setPatientContext(patient);
+  }, []);
+
   // Toggle recording (convenience method)
   const toggleRecording = useCallback(() => {
     if (state.isRecording) {
@@ -183,14 +204,14 @@ export function useVoiceChat() {
     
     // Subscribe to new messages
     messageUnsubscribeRef.current = voiceService.onMessage((message) => {
-      setMessages(prev => [...prev, message]);
+      addMessage(message);
     });
 
     return () => {
       stateUnsubscribeRef.current?.();
       messageUnsubscribeRef.current?.();
     };
-  }, []);
+  }, [addMessage]);
 
   // Handle errors
   useEffect(() => {
@@ -220,6 +241,8 @@ export function useVoiceChat() {
     translateMessage,
     clearMessages,
     setElevenLabsApiKey,
+    setUserInfo,
+    setPatientContext,
     
     // Computed values
     canRecord: isInitialized && state.isConnected,

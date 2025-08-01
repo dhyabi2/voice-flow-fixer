@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_logs: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          language: string
+          message_type: string
+          patient_context: Json | null
+          session_id: string
+          timestamp: string
+          user_agent: string | null
+          user_gender: string
+          user_name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          language: string
+          message_type: string
+          patient_context?: Json | null
+          session_id?: string
+          timestamp?: string
+          user_agent?: string | null
+          user_gender: string
+          user_name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          language?: string
+          message_type?: string
+          patient_context?: Json | null
+          session_id?: string
+          timestamp?: string
+          user_agent?: string | null
+          user_gender?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
+      conversation_memory: {
+        Row: {
+          content: Json
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_accessed: string
+          memory_type: string
+          relevance_score: number | null
+          session_id: string
+          updated_at: string
+          user_name: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_accessed?: string
+          memory_type: string
+          relevance_score?: number | null
+          session_id: string
+          updated_at?: string
+          user_name: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_accessed?: string
+          memory_type?: string
+          relevance_score?: number | null
+          session_id?: string
+          updated_at?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       medical_knowledge: {
         Row: {
           category: string
