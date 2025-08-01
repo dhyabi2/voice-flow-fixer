@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, Users, Brain, Settings, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { NurseAvatar } from './NurseAvatar';
+import { Heart, Users, Brain, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { PatientLookup } from './PatientLookup';
 import { MessageList } from '../VoiceChat/MessageList';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
@@ -128,17 +127,28 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Nurse Avatar & Controls */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Nurse Avatar */}
+            {/* Simple Nurse Status Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-center">Nurse Amira</CardTitle>
+                <CardTitle className="text-center flex items-center justify-center gap-2">
+                  <Heart className="h-6 w-6 text-red-500" />
+                  Nurse Amira
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <NurseAvatar
-                  isListening={state.isRecording}
-                  isSpeaking={state.isSpeaking}
-                  emotion={nurseEmotion}
-                />
+                <div className="text-center space-y-4">
+                  <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-100 to-green-100 rounded-full flex items-center justify-center">
+                    <Heart className="h-16 w-16 text-red-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-medium">
+                      {state.isRecording ? 'Listening...' : 
+                       state.isSpeaking ? 'Speaking...' : 
+                       state.isProcessing ? 'Thinking...' : 'Ready to help'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">Virtual Healthcare Assistant</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
