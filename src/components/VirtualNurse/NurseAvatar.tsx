@@ -14,20 +14,20 @@ function NurseCharacter({ isListening, isSpeaking, emotion }: NurseAvatarProps) 
   const [hovered, setHovered] = useState(false);
 
   useFrame((state) => {
-    if (meshRef.current) {
-      // Gentle breathing animation
-      meshRef.current.scale.y = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.02;
-      
-      // Slight head movement when listening
-      if (isListening) {
-        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 3) * 0.1;
-      }
-      
-      // More animated when speaking
-      if (isSpeaking) {
-        meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 4) * 0.15;
-        meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 6) * 0.1;
-      }
+    if (!meshRef.current) return;
+    
+    // Gentle breathing animation
+    meshRef.current.scale.y = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.02;
+    
+    // Slight head movement when listening
+    if (isListening) {
+      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 3) * 0.1;
+    }
+    
+    // More animated when speaking
+    if (isSpeaking) {
+      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 4) * 0.15;
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 6) * 0.1;
     }
   });
 
