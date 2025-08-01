@@ -52,7 +52,7 @@ export class VoiceService {
     isSpeaking: false,
     isProcessing: false,
     error: null,
-    currentLanguage: 'en'
+    currentLanguage: 'ar'
   };
 
   constructor() {
@@ -342,8 +342,8 @@ export class VoiceService {
       console.log('✅ API key present');
 
       const systemPrompt = this.currentState.currentLanguage === 'ar' 
-        ? 'أنت مساعد ذكي يتحدث العربية. قدم إجابات مفيدة ومختصرة في جملة أو جملتين فقط.'
-        : 'You are a helpful AI assistant. Provide concise and useful responses in 1-2 sentences only.';
+        ? 'أنت الممرضة عميرة، مساعدة رعاية صحية ذكية تتحدث العربية بطريقة دافئة وعطوفة. قدمي إرشادات طبية مفيدة ومطمئنة في جملة أو جملتين. اجعلي صوتك ودودًا ومهنيًا.'
+        : 'You are Nurse Amira, a caring AI healthcare assistant. Provide helpful and reassuring medical guidance in 1-2 sentences with a warm, professional tone.';
 
       console.log('📡 Making API request to OpenRouter...');
       const response = await fetch(`${this.openRouterConfig.baseUrl}/chat/completions`, {
@@ -400,9 +400,43 @@ export class VoiceService {
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = this.currentState.currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
-        utterance.rate = 0.9;
-        utterance.pitch = 1;
-        utterance.volume = 1;
+        
+        // Get available voices and select a more natural one
+        const voices = this.synthesis.getVoices();
+        let selectedVoice = null;
+        
+        if (this.currentState.currentLanguage === 'ar') {
+          // Try to find Arabic voices in order of preference
+          selectedVoice = voices.find(voice => 
+            voice.lang.includes('ar') && (
+              voice.name.includes('Google') || 
+              voice.name.includes('Microsoft') ||
+              voice.name.includes('Samira') ||
+              voice.name.includes('Naayf')
+            )
+          ) || voices.find(voice => voice.lang.includes('ar'));
+        } else {
+          // Try to find English voices in order of preference
+          selectedVoice = voices.find(voice => 
+            voice.lang.includes('en') && (
+              voice.name.includes('Google') || 
+              voice.name.includes('Microsoft') ||
+              voice.name.includes('Zira') ||
+              voice.name.includes('Aria') ||
+              voice.name.includes('Jenny')
+            )
+          ) || voices.find(voice => voice.lang.includes('en'));
+        }
+        
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          console.log('🎯 Selected voice:', selectedVoice.name, selectedVoice.lang);
+        }
+        
+        // Improved voice settings for more natural speech
+        utterance.rate = 0.85; // Slightly slower for better clarity
+        utterance.pitch = this.currentState.currentLanguage === 'ar' ? 1.1 : 0.95; // Slightly higher pitch for Arabic
+        utterance.volume = 0.9;
 
         utterance.onstart = () => {
           console.log('🔊 Speech synthesis started');

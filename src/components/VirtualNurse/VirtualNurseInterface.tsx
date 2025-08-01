@@ -9,6 +9,7 @@ import { MessageList } from '../VoiceChat/MessageList';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { nurseService, type Patient } from '@/services/nurseService';
+import { useTranslation } from '@/utils/translations';
 import { toast } from 'sonner';
 
 interface VirtualNurseInterfaceProps {
@@ -29,6 +30,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
     canRecord
   } = useVoiceChat();
 
+  const { t, isRTL } = useTranslation(state.currentLanguage);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
   const [nurseEmotion, setNurseEmotion] = useState<'neutral' | 'caring' | 'concerned' | 'happy'>('neutral');
@@ -64,20 +66,20 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
   const handleConnect = async () => {
     try {
       await connect();
-      toast.success('Connected to Nurse Amira');
+      toast.success(t('Connected to Nurse Amira'));
     } catch (error) {
-      toast.error('Failed to connect to voice service');
+      toast.error(t('Failed to connect to voice service'));
     }
   };
 
   const handleDisconnect = () => {
     disconnect();
-    toast.info('Disconnected from voice service');
+    toast.info(t('Disconnected from voice service'));
   };
 
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
-    toast.success(`Selected patient: ${patient.name}`);
+    toast.success(`${t('Selected patient:')} ${patient.name}`);
   };
 
   const toggleRecording = () => {
@@ -89,18 +91,18 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
   };
 
   const getConnectionStatus = () => {
-    if (!isInitialized) return { color: 'secondary', text: 'Initializing...' };
-    if (!state.isConnected) return { color: 'destructive', text: 'Disconnected' };
-    if (state.isProcessing) return { color: 'warning', text: 'Processing...' };
-    if (state.isRecording) return { color: 'primary', text: 'Listening' };
-    if (state.isSpeaking) return { color: 'success', text: 'Speaking' };
-    return { color: 'success', text: 'Ready' };
+    if (!isInitialized) return { color: 'secondary', text: t('Initializing...') };
+    if (!state.isConnected) return { color: 'destructive', text: t('Disconnected') };
+    if (state.isProcessing) return { color: 'warning', text: t('Processing...') };
+    if (state.isRecording) return { color: 'primary', text: t('Listening') };
+    if (state.isSpeaking) return { color: 'success', text: t('Speaking') };
+    return { color: 'success', text: t('Ready') };
   };
 
   const status = getConnectionStatus();
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 ${className}`}>
+    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 ${className} ${isRTL ? 'rtl font-arabic' : 'ltr'}`}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
@@ -108,9 +110,9 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
             <div>
               <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                 <Heart className="h-8 w-8 text-red-500" />
-                Virtual Nurse Assistant
+                {t('Virtual Nurse Assistant')}
               </h1>
-              <p className="text-gray-600 mt-1">Compassionate healthcare guidance for Muscat patients</p>
+              <p className="text-gray-600 mt-1">{t('Compassionate healthcare guidance for Muscat patients')}</p>
             </div>
             <div className="flex items-center gap-4">
               <Badge variant={status.color as any} className="px-3 py-1">
@@ -132,7 +134,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
               <CardHeader>
                 <CardTitle className="text-center flex items-center justify-center gap-2">
                   <Heart className="h-6 w-6 text-red-500" />
-                  Nurse Amira
+                  {t('Nurse Amira')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -142,11 +144,11 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                   </div>
                   <div className="space-y-2">
                     <p className="text-lg font-medium">
-                      {state.isRecording ? 'Listening...' : 
-                       state.isSpeaking ? 'Speaking...' : 
-                       state.isProcessing ? 'Thinking...' : 'Ready to help'}
+                      {state.isRecording ? t('Listening...') : 
+                       state.isSpeaking ? t('Speaking...') : 
+                       state.isProcessing ? t('Thinking...') : t('Ready to help')}
                     </p>
-                    <p className="text-sm text-muted-foreground">Virtual Healthcare Assistant</p>
+                    <p className="text-sm text-muted-foreground">{t('Virtual Healthcare Assistant')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -157,13 +159,13 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mic className="h-5 w-5" />
-                  Voice Controls
+                  {t('Voice Controls')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!state.isConnected ? (
                   <Button onClick={handleConnect} className="w-full">
-                    Connect to Nurse Amira
+                    {t('Connect to Nurse Amira')}
                   </Button>
                 ) : (
                   <div className="space-y-3">
@@ -175,7 +177,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                         className="flex items-center gap-2"
                       >
                         {state.isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                        {state.isRecording ? 'Stop' : 'Talk'}
+                        {state.isRecording ? t('Stop') : t('Talk')}
                       </Button>
                       <Button
                         onClick={handleDisconnect}
@@ -183,7 +185,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                         className="flex items-center gap-2"
                       >
                         <VolumeX className="h-4 w-4" />
-                        Disconnect
+                        {t('Disconnect')}
                       </Button>
                     </div>
                     <Button
@@ -192,7 +194,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                       className="w-full"
                       disabled={messages.length === 0}
                     >
-                      Clear Conversation
+                      {t('Clear Conversation')}
                     </Button>
                   </div>
                 )}
@@ -210,7 +212,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
-                  Recent Patients
+                  {t('Recent Patients')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -238,25 +240,25 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="conversation" className="flex items-center gap-2">
                   <Volume2 className="h-4 w-4" />
-                  Conversation
+                  {t('Conversation')}
                 </TabsTrigger>
                 <TabsTrigger value="patients" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Patients
+                  {t('Patients')}
                 </TabsTrigger>
                 <TabsTrigger value="knowledge" className="flex items-center gap-2">
                   <Brain className="h-4 w-4" />
-                  Knowledge
+                  {t('Knowledge')}
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="conversation" className="mt-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Healthcare Conversation</CardTitle>
+                    <CardTitle>{t('Healthcare Conversation')}</CardTitle>
                     {selectedPatient && (
                       <div className="text-sm text-muted-foreground">
-                        Active patient: <span className="font-medium">{selectedPatient.name}</span>
+                        {t('Active patient:')} <span className="font-medium">{selectedPatient.name}</span>
                       </div>
                     )}
                   </CardHeader>
@@ -271,13 +273,12 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                     {messages.length === 0 && (
                       <div className="text-center py-12 text-muted-foreground">
                         <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium mb-2">Hello, I'm Nurse Amira</p>
+                        <p className="text-lg font-medium mb-2">{t("Hello, I'm Nurse Amira")}</p>
                         <p className="text-sm max-w-md mx-auto">
-                          I'm here to provide caring healthcare guidance and support. 
-                          Feel free to ask about symptoms, medications, appointments, or general health concerns.
+                          {t("I'm here to provide caring healthcare guidance and support. Feel free to ask about symptoms, medications, appointments, or general health concerns.")}
                         </p>
                         <p className="text-xs mt-4 text-amber-600">
-                          Note: I provide guidance only. Always consult your doctor for medical decisions.
+                          {t("Note: I provide guidance only. Always consult your doctor for medical decisions.")}
                         </p>
                       </div>
                     )}
@@ -297,23 +298,22 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Brain className="h-5 w-5" />
-                      Medical Knowledge Base
+                      {t('Medical Knowledge Base')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-12 text-muted-foreground">
                       <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">Medical Knowledge Available</p>
+                      <p className="text-lg font-medium mb-2">{t('Medical Knowledge Available')}</p>
                       <p className="text-sm max-w-md mx-auto">
-                        I have access to comprehensive medical knowledge covering respiratory, 
-                        cardiovascular, endocrine, emergency, and musculoskeletal conditions.
+                        {t('I have access to comprehensive medical knowledge covering respiratory, cardiovascular, endocrine, emergency, and musculoskeletal conditions.')}
                       </p>
                       <div className="flex flex-wrap gap-2 justify-center mt-4">
-                        <Badge variant="outline">Respiratory</Badge>
-                        <Badge variant="outline">Cardiovascular</Badge>
-                        <Badge variant="outline">Endocrine</Badge>
-                        <Badge variant="outline">Emergency</Badge>
-                        <Badge variant="outline">Musculoskeletal</Badge>
+                        <Badge variant="outline">{t('Respiratory')}</Badge>
+                        <Badge variant="outline">{t('Cardiovascular')}</Badge>
+                        <Badge variant="outline">{t('Endocrine')}</Badge>
+                        <Badge variant="outline">{t('Emergency')}</Badge>
+                        <Badge variant="outline">{t('Musculoskeletal')}</Badge>
                       </div>
                     </div>
                   </CardContent>

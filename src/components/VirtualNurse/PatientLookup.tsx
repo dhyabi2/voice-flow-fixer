@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { nurseService, type Patient } from '@/services/nurseService';
+import { useTranslation } from '@/utils/translations';
 
 interface PatientLookupProps {
   onPatientSelect: (patient: Patient) => void;
@@ -12,6 +13,7 @@ interface PatientLookupProps {
 }
 
 export function PatientLookup({ onPatientSelect, selectedPatient }: PatientLookupProps) {
+  const { t, isRTL } = useTranslation('ar');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Patient[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -62,7 +64,7 @@ export function PatientLookup({ onPatientSelect, selectedPatient }: PatientLooku
         <CardContent>
           <div className="flex gap-2">
             <Input
-              placeholder="Search by name, ID, or phone number..."
+              placeholder={t('Search by name, ID, or phone number...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
