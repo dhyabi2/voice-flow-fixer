@@ -19,8 +19,8 @@ interface PerplexityResponse {
 }
 
 export class OmanHealthcareService {
-  private static PERPLEXITY_API_KEY = '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';
-  private static PERPLEXITY_BASE_URL = 'https://api.perplexity.ai/chat/completions';
+  private static supabaseUrl = 'https://dhgpjntvshyjzicxihnm.supabase.co';
+  private static supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZ3BqbnR2c2h5anppY3hpaG5tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzIyODc3MTUsImV4cCI6MjA0Nzg2MzcxNX0.Wv5AYr1jfhKF6vF_X-0XPEkLgQ2GQoObwKcH4vNBfB4';
   
   // Static comprehensive database of Oman healthcare facilities
   private static OMAN_FACILITIES: HealthcareFacility[] = [
@@ -140,68 +140,30 @@ export class OmanHealthcareService {
     }
   };
 
-  public static setPerplexityApiKey(apiKey: string): void {
-    this.PERPLEXITY_API_KEY = apiKey;
-    localStorage.setItem('perplexity-api-key', apiKey);
-  }
-
-  public static getPerplexityApiKey(): string {
-    return localStorage.getItem('perplexity-api-key') || this.PERPLEXITY_API_KEY;
-  }
-
   public static async getRealtimeHealthcareInfo(query: string, language: 'ar' | 'en' = 'ar'): Promise<string> {
     try {
-      const apiKey = this.getPerplexityApiKey();
-      if (!apiKey) {
-        return this.getFallbackHealthcareInfo(query, language);
-      }
-
-      const searchPrompt = language === 'ar' 
-        ? `ابحث عن معلومات حديثة عن المستشفيات والمراكز الصحية في عُمان لسؤال: "${query}". اذكر أسماء المستشفيات، المواقع، أرقام الهواتف، والخدمات المتاحة. كن دقيق ومحدث.`
-        : `Search for current information about hospitals and health centers in Oman for query: "${query}". Include hospital names, locations, phone numbers, and available services. Be accurate and up-to-date.`;
-
-      const response = await fetch(this.PERPLEXITY_BASE_URL, {
+      // Use secure Supabase edge function instead of direct API calls
+      const response = await fetch(`${this.supabaseUrl}/functions/v1/perplexity-healthcare-search`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.supabaseAnonKey}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
-          messages: [
-            {
-              role: 'system',
-              content: language === 'ar' 
-                ? 'أنت مساعد طبي متخصص في النظام الصحي العُماني. قدم معلومات دقيقة ومحدثة.'
-                : 'You are a medical assistant specialized in the Omani healthcare system. Provide accurate and up-to-date information.'
-            },
-            {
-              role: 'user',
-              content: searchPrompt
-            }
-          ],
-          temperature: 0.2,
-          top_p: 0.9,
-          max_tokens: 500,
-          return_images: false,
-          return_related_questions: false,
-          search_domain_filter: ['moh.gov.om', 'omanobserver.om', 'timesofoman.com'],
-          search_recency_filter: 'month',
-          frequency_penalty: 1,
-          presence_penalty: 0
+          query,
+          language
         }),
       });
 
       if (!response.ok) {
-        debugLogger.warn('OMAN_HEALTHCARE', 'Perplexity API failed, using fallback', { status: response.status });
+        debugLogger.warn('OMAN_HEALTHCARE', 'Edge function failed, using fallback', { status: response.status });
         return this.getFallbackHealthcareInfo(query, language);
       }
 
-      const data: PerplexityResponse = await response.json();
-      const content = data.choices?.[0]?.message?.content;
+      const data = await response.json();
       
-      if (content) {
-        return content;
+      if (data.content) {
+        return data.content;
       } else {
         return this.getFallbackHealthcareInfo(query, language);
       }
