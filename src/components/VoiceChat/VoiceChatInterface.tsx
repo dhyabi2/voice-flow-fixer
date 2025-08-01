@@ -9,9 +9,11 @@ import { MessageList } from './MessageList';
 import { StatusIndicator } from './StatusIndicator';
 import { VoiceAnalytics } from './VoiceAnalytics';
 import { SettingsPanel } from './SettingsPanel';
+import { DebugPanel } from './DebugPanel';
 import { ErrorBoundary } from './ErrorBoundary';
 import { PermissionGuard } from './PermissionGuard';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
+import { debugLogger } from '@/utils/debugLogger';
 import { cn } from '@/lib/utils';
 
 interface VoiceChatInterfaceProps {
@@ -20,6 +22,7 @@ interface VoiceChatInterfaceProps {
 
 export function VoiceChatInterface({ className }: VoiceChatInterfaceProps) {
   const [showSettings, setShowSettings] = React.useState(false);
+  const [showDebug, setShowDebug] = React.useState(false);
   
   const {
     state,
@@ -33,6 +36,20 @@ export function VoiceChatInterface({ className }: VoiceChatInterfaceProps) {
     clearMessages,
     canRecord
   } = useVoiceChat();
+
+  // Debug logging for component lifecycle
+  React.useEffect(() => {
+    debugLogger.info('VOICE_CHAT_UI', 'VoiceChatInterface component mounted');
+    debugLogger.debug('VOICE_CHAT_UI', 'Initial state', { state, isInitialized, messageCount: messages.length });
+  }, []);
+
+  React.useEffect(() => {
+    debugLogger.debug('VOICE_CHAT_UI', 'State updated', { state });
+  }, [state]);
+
+  React.useEffect(() => {
+    debugLogger.debug('VOICE_CHAT_UI', 'Messages updated', { messageCount: messages.length, messages });
+  }, [messages]);
 
   return (
     <ErrorBoundary>
@@ -57,6 +74,11 @@ export function VoiceChatInterface({ className }: VoiceChatInterfaceProps) {
                     <SettingsPanel 
                       isOpen={showSettings}
                       onToggle={() => setShowSettings(!showSettings)}
+                    />
+                    
+                    <DebugPanel 
+                      isOpen={showDebug}
+                      onToggle={() => setShowDebug(!showDebug)}
                     />
                     
                     <Button
@@ -163,6 +185,17 @@ export function VoiceChatInterface({ className }: VoiceChatInterfaceProps) {
             />
           </div>
         </div>
+        
+        {/* Debug Panel - Full Width */}
+        {showDebug && (
+          <div className="mt-6">
+            <DebugPanel 
+              isOpen={showDebug}
+              onToggle={() => setShowDebug(!showDebug)}
+              className="w-full"
+            />
+          </div>
+        )}
       </PermissionGuard>
     </ErrorBoundary>
   );
