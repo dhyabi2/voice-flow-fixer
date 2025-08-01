@@ -5,7 +5,67 @@
 @layer base {
   :root {
     /* Enhanced color system for healthcare */
-    --background: 0 0% 100%;
+  /* Gen Z Color Palette */
+  --primary: 280 100% 70%; /* Vibrant purple */
+  --primary-glow: 300 100% 80%; /* Light purple */
+  --primary-variant: 260 100% 65%; /* Deep purple */
+  
+  --secondary: 340 100% 70%; /* Hot pink */
+  --secondary-glow: 350 100% 80%; /* Light pink */
+  
+  --accent: 200 100% 70%; /* Cyan blue */
+  --accent-glow: 180 100% 80%; /* Light cyan */
+  
+  --neon-green: 120 100% 50%; /* Electric green */
+  --neon-yellow: 60 100% 50%; /* Electric yellow */
+  --neon-orange: 30 100% 60%; /* Electric orange */
+  
+  /* Enhanced gradients for Gen Z vibes */
+  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  --gradient-neon: linear-gradient(45deg, hsl(var(--neon-green)), hsl(var(--accent)), hsl(var(--primary)));
+  --gradient-sunset: linear-gradient(135deg, hsl(var(--neon-orange)), hsl(var(--secondary)), hsl(var(--primary)));
+  --gradient-ocean: linear-gradient(180deg, hsl(var(--accent)), hsl(var(--primary)));
+  
+  /* Glow effects */
+  --glow-primary: 0 0 30px hsl(var(--primary) / 0.5);
+  --glow-secondary: 0 0 30px hsl(var(--secondary) / 0.5);
+  --glow-accent: 0 0 30px hsl(var(--accent) / 0.5);
+  
+  /* Modern shadows */
+  --shadow-neon: 0 8px 32px hsl(var(--primary) / 0.3);
+  --shadow-vibrant: 0 10px 40px hsl(var(--secondary) / 0.4);
+  
+  --background: 0 0% 100%;
+  
+  /* Gen Z Color Palette */
+  --primary: 280 100% 70%; /* Vibrant purple */
+  --primary-glow: 300 100% 80%; /* Light purple */
+  --primary-variant: 260 100% 65%; /* Deep purple */
+  
+  --secondary: 340 100% 70%; /* Hot pink */
+  --secondary-glow: 350 100% 80%; /* Light pink */
+  
+  --accent: 200 100% 70%; /* Cyan blue */
+  --accent-glow: 180 100% 80%; /* Light cyan */
+  
+  --neon-green: 120 100% 50%; /* Electric green */
+  --neon-yellow: 60 100% 50%; /* Electric yellow */
+  --neon-orange: 30 100% 60%; /* Electric orange */
+  
+  /* Enhanced gradients for Gen Z vibes */
+  --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+  --gradient-neon: linear-gradient(45deg, hsl(var(--neon-green)), hsl(var(--accent)), hsl(var(--primary)));
+  --gradient-sunset: linear-gradient(135deg, hsl(var(--neon-orange)), hsl(var(--secondary)), hsl(var(--primary)));
+  --gradient-ocean: linear-gradient(180deg, hsl(var(--accent)), hsl(var(--primary)));
+  
+  /* Glow effects */
+  --glow-primary: 0 0 30px hsl(var(--primary) / 0.5);
+  --glow-secondary: 0 0 30px hsl(var(--secondary) / 0.5);
+  --glow-accent: 0 0 30px hsl(var(--accent) / 0.5);
+  
+  /* Modern shadows */
+  --shadow-neon: 0 8px 32px hsl(var(--primary) / 0.3);
+  --shadow-vibrant: 0 10px 40px hsl(var(--secondary) / 0.4);
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -78,6 +138,69 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+}
+
+/* Gen Z Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: var(--glow-primary); }
+  50% { box-shadow: var(--glow-secondary); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.gradient-animation {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Gen Z Typography */
+.text-neon {
+  background: var(--gradient-neon);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+}
+
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Custom button styles for Gen Z */
+.btn-neon {
+  background: var(--gradient-neon);
+  border: none;
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  box-shadow: var(--glow-primary);
+  transition: all 0.3s ease;
+}
+
+.btn-neon:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-secondary);
 }
 
 @layer base {

@@ -147,39 +147,67 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
 
   return (
     <div className={cn(
-      "min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50",
+      "min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-cyan-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20",
+      "relative overflow-hidden",
       isRTL ? 'rtl font-arabic' : 'ltr',
       className
     )}>
-      {/* Modern Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-40">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-xl float-animation"></div>
+        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-cyan-400/20 to-purple-400/20 rounded-full blur-xl float-animation" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-32 left-1/3 w-40 h-40 bg-gradient-to-r from-pink-400/15 to-cyan-400/15 rounded-full blur-xl float-animation" style={{animationDelay: '2s'}}></div>
+      </div>
+
+      {/* Modern Header with Gen Z vibes */}
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-purple-200/50 dark:border-purple-700/50 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center">
-                  <Heart className="h-6 w-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-pink-500 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg pulse-glow">
+                  <Heart className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">
-                    {t('Nurse Amira')}
+                  <h1 className="text-2xl font-bold text-gradient">
+                    {state.currentLanguage === 'ar' ? '🩺 الممرضة عميرة' : '🩺 Nurse Amira'}
                   </h1>
-                  <p className="text-sm text-gray-500">{t('Virtual Healthcare Assistant')}</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-300 font-medium">
+                    {state.currentLanguage === 'ar' ? '✨ مساعدتج الصحية المفضلة' : '✨ Your Fave Health Buddy'}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Status Badge */}
+              {/* Status Badge with Gen Z style */}
               <div className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
-                statusInfo.color
+                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2",
+                statusInfo.color.includes('gray') && "bg-gray-100 text-gray-700 border-gray-300",
+                statusInfo.color.includes('red') && "bg-red-100 text-red-700 border-red-300",
+                statusInfo.color.includes('blue') && "bg-blue-100 text-blue-700 border-blue-300",
+                statusInfo.color.includes('green') && "bg-green-100 text-green-700 border-green-300",
+                statusInfo.color.includes('purple') && "bg-purple-100 text-purple-700 border-purple-300",
+                statusInfo.color.includes('emerald') && "bg-gradient-to-r from-emerald-400 to-cyan-400 text-white border-emerald-300 shadow-lg"
               )}>
                 <StatusIcon className={cn(
                   "h-4 w-4",
                   statusInfo.pulse && "animate-pulse"
                 )} />
-                {statusInfo.text}
+                {state.currentLanguage === 'ar' ? 
+                  (statusInfo.text === 'Ready' ? 'جاهزة! 💪' : 
+                   statusInfo.text === 'Listening' ? 'اسمعج 👂' : 
+                   statusInfo.text === 'Speaking' ? 'اتكلم 🎤' : 
+                   statusInfo.text === 'Processing...' ? 'اشتغل... 🧠' :
+                   statusInfo.text === 'Disconnected' ? 'مو متصلة 😴' : 
+                   statusInfo.text) : 
+                  (statusInfo.text === 'Ready' ? 'Ready! 💪' : 
+                   statusInfo.text === 'Listening' ? 'Listening 👂' : 
+                   statusInfo.text === 'Speaking' ? 'Speaking 🎤' : 
+                   statusInfo.text === 'Processing...' ? 'Thinking... 🧠' :
+                   statusInfo.text === 'Disconnected' ? 'Offline 😴' : 
+                   statusInfo.text)
+                }
               </div>
 
               {/* Language Toggle */}
@@ -220,9 +248,9 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Conversation Area */}
+          {/* Main Conversation Area with Gen Z styling */}
           <div className="lg:col-span-2">
-            <Card className="h-[calc(100vh-200px)] flex flex-col">
+            <Card className="h-[calc(100vh-200px)] flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 shadow-2xl overflow-hidden">
               <CardContent className="flex-1 flex flex-col p-0">
                 {/* Patient Context Bar */}
                 {selectedPatient && (
@@ -254,18 +282,21 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                   {messages.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center max-w-md">
-                        <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                          <MessageCircle className="h-10 w-10 text-red-500" />
+                        <div className="w-24 h-24 bg-gradient-to-br from-purple-400 via-pink-400 to-cyan-400 rounded-3xl flex items-center justify-center mx-auto mb-6 float-animation">
+                          <MessageCircle className="h-12 w-12 text-white" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                          {t("Hello, I'm Nurse Amira")}
+                        <h3 className="text-2xl font-bold text-gradient mb-3">
+                          {state.currentLanguage === 'ar' ? "هلا والله! 🤗 أنا عميرة" : "Hey there! 🤗 I'm Amira"}
                         </h3>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                          {t("I'm here to provide caring healthcare guidance and support. Feel free to ask about symptoms, medications, appointments, or general health concerns.")}
+                        <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed mb-6 font-medium">
+                          {state.currentLanguage === 'ar' 
+                            ? "شلونج حبيبتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
+                            : "What's good bestie? 💕 I'm here to help with all your health stuff. Just talk to me like your girl! 🗣️✨"
+                          }
                         </p>
-                        <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-xs">
-                          <Heart className="h-4 w-4" />
-                          {t("Always consult your doctor for medical decisions")}
+                        <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-sm font-bold shadow-lg">
+                          <Heart className="h-5 w-5" />
+                          {state.currentLanguage === 'ar' ? "دايماً استشيري الدكتور للقرارات المهمة 👩‍⚕️" : "Always check with your doc for the big stuff 👩‍⚕️"}
                         </div>
                       </div>
                     </div>
@@ -277,57 +308,55 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                   )}
                 </div>
 
-                {/* Voice Controls Bar */}
-                <div className="p-6 bg-gray-50 border-t">
+                {/* Voice Controls Bar with Gen Z style */}
+                <div className="p-6 bg-gradient-to-r from-purple-50/80 via-pink-50/80 to-cyan-50/80 dark:from-gray-800/80 dark:via-purple-900/20 dark:to-pink-900/20 border-t border-purple-200/50 backdrop-blur-sm">
                   <div className="flex items-center justify-center gap-4">
                     {!state.isConnected ? (
                       <Button 
                         onClick={handleConnect} 
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-medium"
+                        className="btn-neon px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl transform hover:scale-105 transition-all duration-300"
                       >
-                        <Phone className="h-5 w-5 mr-2" />
-                        {t('Connect to Nurse Amira')}
+                        <Phone className="h-6 w-6 mr-3" />
+                        {state.currentLanguage === 'ar' ? '🚀 يلا نبدأ!' : '🚀 Let\'s Go!'}
                       </Button>
                     ) : (
                       <>
-                        {/* Main Voice Button */}
+                        {/* Main Voice Button with extreme Gen Z styling */}
                         <Button
                           onClick={toggleRecording}
                           disabled={!canRecord}
                           className={cn(
-                            "w-16 h-16 rounded-full p-0 transition-all duration-300",
+                            "w-20 h-20 rounded-full p-0 transition-all duration-500 transform border-4",
                             state.isRecording 
-                              ? "bg-red-500 hover:bg-red-600 scale-110 shadow-lg shadow-red-500/30" 
-                              : "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                              ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 scale-110 shadow-2xl border-white pulse-glow" 
+                              : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 shadow-xl border-purple-300 hover:scale-105 gradient-animation"
                           )}
                         >
                           {state.isRecording ? (
-                            <MicOff className="h-7 w-7 text-white" />
+                            <MicOff className="h-8 w-8 text-white animate-pulse" />
                           ) : (
-                            <Mic className="h-7 w-7 text-white" />
+                            <Mic className="h-8 w-8 text-white" />
                           )}
                         </Button>
 
-                        {/* Secondary Actions */}
-                        <div className="flex gap-2">
+                        {/* Secondary Actions with Gen Z style */}
+                        <div className="flex gap-3">
                           <Button
                             onClick={handleDisconnect}
                             variant="outline"
-                            size="sm"
-                            className="h-9"
+                            className="h-12 px-6 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold"
                           >
-                            <PhoneOff className="h-4 w-4 mr-2" />
-                            {t('Disconnect')}
+                            <PhoneOff className="h-5 w-5 mr-2" />
+                            {state.currentLanguage === 'ar' ? '👋 باي' : '👋 Peace'}
                           </Button>
                           
                           <Button
                             onClick={clearMessages}
                             variant="outline"
-                            size="sm"
                             disabled={messages.length === 0}
-                            className="h-9"
+                            className="h-12 px-6 rounded-xl border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 font-bold"
                           >
-                            {t('Clear')}
+                            {state.currentLanguage === 'ar' ? '🗑️ امسح' : '🗑️ Clear'}
                           </Button>
                         </div>
                       </>
@@ -335,8 +364,8 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                   </div>
 
                   {state.error && (
-                    <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-700 text-sm text-center">{state.error}</p>
+                    <div className="mt-4 p-4 bg-gradient-to-r from-red-100 to-pink-100 border-2 border-red-300 rounded-2xl">
+                      <p className="text-red-700 text-sm text-center font-medium">⚠️ {state.error}</p>
                     </div>
                   )}
                 </div>
@@ -344,15 +373,15 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar with Gen Z aesthetic */}
           <div className="space-y-6">
-            {/* Quick Patient Access */}
-            <Card>
+            {/* Quick Patient Access with modern styling */}
+            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 shadow-xl">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                    <Users className="h-5 w-5 text-blue-500" />
-                    {t('Patients')}
+                  <h3 className="font-bold text-lg text-gradient flex items-center gap-2">
+                    <Users className="h-6 w-6 text-purple-500" />
+                    {state.currentLanguage === 'ar' ? '👥 المرضى' : '👥 Patients'}
                   </h3>
                   <Sheet open={showPatients} onOpenChange={setShowPatients}>
                     <SheetTrigger asChild>
@@ -362,9 +391,9 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                     </SheetTrigger>
                     <SheetContent side="right" className="w-96">
                       <SheetHeader>
-                        <SheetTitle className="flex items-center gap-2">
-                          <Users className="h-5 w-5" />
-                          {t('Patient Directory')}
+                        <SheetTitle className="flex items-center gap-2 text-xl font-bold text-gradient">
+                          <Users className="h-6 w-6" />
+                          {state.currentLanguage === 'ar' ? '📋 دليل المرضى' : '📋 Patient Directory'}
                         </SheetTitle>
                       </SheetHeader>
                       <div className="mt-6">
@@ -402,36 +431,36 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
 
                 <Button 
                   variant="outline" 
-                  className="w-full mt-4" 
+                  className="w-full mt-4 h-12 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold" 
                   onClick={() => setShowPatients(true)}
                 >
-                  {t('View All Patients')}
+                  {state.currentLanguage === 'ar' ? '📋 شوف الكل' : '📋 See All'}
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <Card>
+            {/* Quick Stats with Gen Z vibes */}
+            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-cyan-200/50 dark:border-cyan-700/50 shadow-xl">
               <CardContent className="p-6">
-                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-green-500" />
-                  {t('Session Stats')}
+                <h3 className="font-bold text-lg text-gradient mb-4 flex items-center gap-2">
+                  <Activity className="h-6 w-6 text-cyan-500" />
+                  {state.currentLanguage === 'ar' ? '📊 إحصائيات الجلسة' : '📊 Session Stats'}
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{t('Messages')}</span>
-                    <Badge variant="secondary">{messages.length}</Badge>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                    <span className="text-sm font-bold text-gray-700">{state.currentLanguage === 'ar' ? '💬 الرسائل' : '💬 Messages'}</span>
+                    <Badge variant="secondary" className="bg-purple-200 text-purple-800 font-bold">{messages.length}</Badge>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{t('Language')}</span>
-                    <Badge variant="outline">
-                      {state.currentLanguage === 'ar' ? 'العربية' : 'English'}
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl">
+                    <span className="text-sm font-bold text-gray-700">{state.currentLanguage === 'ar' ? '🌍 اللغة' : '🌍 Language'}</span>
+                    <Badge variant="outline" className="border-cyan-300 text-cyan-700 font-bold">
+                      {state.currentLanguage === 'ar' ? '🇴🇲 عربي' : '🇺🇸 English'}
                     </Badge>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">{t('Patient')}</span>
-                    <Badge variant={selectedPatient ? "default" : "secondary"}>
-                      {selectedPatient ? t('Selected') : t('None')}
+                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+                    <span className="text-sm font-bold text-gray-700">{state.currentLanguage === 'ar' ? '👤 المريض' : '👤 Patient'}</span>
+                    <Badge variant={selectedPatient ? "default" : "secondary"} className={selectedPatient ? "bg-green-200 text-green-800 font-bold" : "bg-gray-200 text-gray-600 font-bold"}>
+                      {selectedPatient ? (state.currentLanguage === 'ar' ? '✅ محدد' : '✅ Selected') : (state.currentLanguage === 'ar' ? '❌ مو محدد' : '❌ None')}
                     </Badge>
                   </div>
                 </div>
