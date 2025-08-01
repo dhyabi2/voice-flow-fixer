@@ -1,7 +1,7 @@
-import { VirtualNurseInterface } from "@/components/VirtualNurse/VirtualNurseInterface";
+import { ModernVirtualNurseInterface } from "@/components/VirtualNurse/ModernVirtualNurseInterface";
 
 const Index = () => {
-  return <VirtualNurseInterface />;
+  return <ModernVirtualNurseInterface />;
 };
 
 export default Index;
