@@ -40,6 +40,8 @@ export class EnhancedVoiceService {
     currentLanguage: 'ar' // Default to Arabic
   };
 
+  private userInfo: { name?: string; gender?: 'male' | 'female' } = {};
+
   constructor() {
     this.config = {
       elevenLabsApiKey: 'sk_dc0c45e8fa3c7c9d52db9617022ae16dabd2c7ebfa060958', // Default ElevenLabs API key
@@ -275,6 +277,11 @@ export class EnhancedVoiceService {
     this.config.elevenLabsApiKey = apiKey;
     localStorage.setItem('elevenlabs-api-key', apiKey);
     debugLogger.info('ENHANCED_VOICE', 'ElevenLabs API key updated');
+  }
+
+  public setUserInfo(name: string, gender: 'male' | 'female'): void {
+    this.userInfo = { name, gender };
+    debugLogger.info('ENHANCED_VOICE', 'User info updated', { name, gender });
   }
 
   public disconnect(): void {
@@ -614,9 +621,24 @@ export class EnhancedVoiceService {
     };
 
     try {
+      // Create gender-specific prompts
+      const genderSpecificTerms = this.userInfo.gender === 'female' 
+        ? (this.currentState.currentLanguage === 'ar' 
+            ? '"شحالِش؟" "حبيبتي" "أختي" "وايد عليش" - استخدم الضمائر المؤنثة'
+            : '"girl", "sis", "bestie" - use feminine terms')
+        : (this.currentState.currentLanguage === 'ar' 
+            ? '"شحالَك؟" "حبيبي" "أخوي" "وايد عليك" - استخدم الضمائر المذكرة'
+            : '"bro", "dude", "man" - use masculine terms');
+
+      const userContext = this.userInfo.name 
+        ? (this.currentState.currentLanguage === 'ar' 
+            ? `المستخدم اسمه ${this.userInfo.name}، ${genderSpecificTerms}.` 
+            : `The user's name is ${this.userInfo.name}, ${genderSpecificTerms}.`)
+        : genderSpecificTerms;
+
       const systemPrompt = this.currentState.currentLanguage === 'ar' 
-        ? 'انت الممرضة عميرة من عُمان. تكلم باللهجة الخليجية العُمانية والإماراتية مع الجميع - رجال ونساء من كل الأعمار. استخدم كلمات مثل: "شلونك؟" "شلونج؟" "وايد زين" "خلاص كذا" "يلا هاي" "ما شي" "صج؟" "حدك" "حدج" "هالشي" "بعدين شوف" "والله زين" "عادي" "يعني شنو" "أكيد" "طبعاً" "اهني" "هني" "شدعوى" "شنو مالك" "تسلم" "الله يعطيك العافية" "مشكور" "تشكر" "أدري" "ما أدري" "ممكن" "خوش" "حلو" "حليلك" "يختي" "يخوي" "حبيبي" "هلا والله" "أهلين" "مرحبا" "صباح الخير" "تصبح على خير". كلم بطريقة ودية مع الكل، مو بس النساء. جاوب في جملة وحدة.'
-        : 'You are Nurse Amira from Oman/UAE. Speak using Gulf dialect with everyone - men, women, all ages. Use terms like: "khalas", "yalla", "wayid", "ma shi", "zain", "habibi", "akeed", "tab3an", "ahni/hni", "sh-deewa", "shno malek", "tislam", "allah ya3teek al3afiya", "mashkoor", "tishkar", "adri", "ma adri", "mumkin", "khosh", "helo", "haleelak", "yakhti", "yakhooya", "ahlan wa sahlan". Be friendly with everyone, not just targeting women. One sentence only.';
+        ? `انت الممرضة أميرة من عُمان. تكلم باللهجة الخليجية العُمانية والإماراتية. ${userContext} استخدم كلمات مثل: "شحالَك؟" "شحالِش؟" "واجد زين" "خلاص جي" "يلا نمشي" "ما موجود" "صدق؟" "وايد عليك" "وايد عليش" "هالشي" "بعدين نشوف" "والله زين" "عادي" "يعني أيش؟" "أكيد" "طبعاً" "هنا" "أي دعوى؟" "أيش مالك؟" "تسلم" "الله يعافيك" "مشكور" "أدري" "ما أعرف" "ممكن" "زين" "أختي" "أخوي" "حبيبي" "هلا والله" "أهلين" "مرحبا" "صباح الخير" "تصبح على خير". جاوب في جملة وحدة.`
+        : `You are Nurse Amira from Oman/UAE. Speak using Gulf dialect. ${userContext} Use terms like: "khalas", "yalla", "wayid", "ma shi", "zain", "habibi", "akeed", "tab3an", "hna", "ay da3wa", "aish malek", "tislam", "allah ya3afeek", "mashkoor", "adri", "ma a3raf", "mumkin", "zain", "ukhti", "akhooya", "habeebi", "ahlan wa sahlan". One sentence only.`;
 
       const response = await fetch(`${openRouterConfig.baseUrl}/chat/completions`, {
         method: 'POST',

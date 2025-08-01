@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Heart, 
   Settings, 
@@ -55,6 +57,9 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showPatients, setShowPatients] = useState(false);
+  const [userName, setUserName] = useState<string>('');
+  const [userGender, setUserGender] = useState<'male' | 'female' | null>(null);
+  const [showNameInput, setShowNameInput] = useState(true);
   const [voiceSettings, setVoiceSettings] = useState({
     language: state.currentLanguage,
     voiceType: 'premium' as 'natural' | 'enhanced' | 'premium', // Default to ElevenLabs
@@ -65,6 +70,40 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   useEffect(() => {
     loadRecentPatients();
   }, []);
+
+  const detectGender = (name: string): 'male' | 'female' => {
+    const maleNames = ['محمد', 'أحمد', 'علي', 'حسن', 'حسين', 'عبدالله', 'عبدالرحمن', 'خالد', 'سعد', 'فهد', 'مشعل', 'طلال', 'نايف', 'بندر', 'سلطان', 'راشد', 'منصور', 'عبدالعزيز', 'يوسف', 'إبراهيم', 'عمر', 'زايد', 'حمد', 'سالم', 'عيسى', 'موسى', 'داود', 'سليمان', 'يعقوب'];
+    const femaleNames = ['فاطمة', 'عائشة', 'خديجة', 'زينب', 'مريم', 'آمنة', 'صفية', 'حفصة', 'أم كلثوم', 'رقية', 'سارة', 'هاجر', 'ليلى', 'نورا', 'سلمى', 'أسماء', 'جميلة', 'كريمة', 'حنان', 'وفاء', 'إيمان', 'أمل', 'رحمة', 'بركة', 'شيخة', 'موزة', 'منى', 'هند', 'عائشة', 'أميرة', 'نوال', 'سميرة', 'لطيفة', 'عزيزة'];
+    
+    const firstName = name.trim().split(' ')[0].toLowerCase();
+    
+    if (maleNames.some(maleName => maleName.includes(firstName) || firstName.includes(maleName))) {
+      return 'male';
+    }
+    if (femaleNames.some(femaleName => femaleName.includes(firstName) || firstName.includes(femaleName))) {
+      return 'female';
+    }
+    
+    // Default fallback based on name ending patterns
+    if (firstName.endsWith('ة') || firstName.endsWith('اء') || firstName.endsWith('ان')) {
+      return 'female';
+    }
+    
+    return 'male'; // Default to male if uncertain
+  };
+
+  const handleNameSubmit = () => {
+    if (userName.trim()) {
+      const detectedGender = detectGender(userName);
+      setUserGender(detectedGender);
+      setShowNameInput(false);
+      toast.success(
+        state.currentLanguage === 'ar' 
+          ? `أهلاً وسهلاً ${userName}! 🎉`
+          : `Welcome ${userName}! 🎉`
+      );
+    }
+  };
 
   const loadRecentPatients = async () => {
     try {
@@ -78,6 +117,11 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   const handleConnect = async () => {
     try {
       await connect();
+      if (userName && userGender) {
+        // Pass user info to the voice service via the enhanced voice service
+        const { enhancedVoiceService } = await import('@/services/enhancedVoiceService');
+        enhancedVoiceService.setUserInfo(userName, userGender);
+      }
       toast.success(t('Connected to Nurse Amira'));
     } catch (error) {
       toast.error(t('Failed to connect to voice service'));
@@ -169,12 +213,15 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                   <Heart className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gradient">
-                    {state.currentLanguage === 'ar' ? '🩺 الممرضة عميرة' : '🩺 Nurse Amira'}
-                  </h1>
-                  <p className="text-sm text-purple-600 dark:text-purple-300 font-medium">
-                    {state.currentLanguage === 'ar' ? '✨ مساعدتج الصحية المفضلة' : '✨ Your Fave Health Buddy'}
-                  </p>
+                   <h1 className="text-2xl font-bold text-gradient">
+                     {state.currentLanguage === 'ar' ? '🩺 الممرضة أميرة' : '🩺 Nurse Amira'}
+                   </h1>
+                   <p className="text-sm text-purple-600 dark:text-purple-300 font-medium">
+                     {state.currentLanguage === 'ar' 
+                       ? (userGender === 'female' ? '✨ مساعدتج الصحية المفضلة' : '✨ مساعدك الصحي المفضل')
+                       : '✨ Your Fave Health Buddy'
+                     }
+                   </p>
                 </div>
               </div>
             </div>
@@ -196,7 +243,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                 )} />
                 {state.currentLanguage === 'ar' ? 
                   (statusInfo.text === 'Ready' ? 'جاهزة! 💪' : 
-                   statusInfo.text === 'Listening' ? 'اسمعج 👂' : 
+                   statusInfo.text === 'Listening' ? (userGender === 'female' ? 'اسمعج 👂' : 'اسمعك 👂') : 
                    statusInfo.text === 'Speaking' ? 'اتكلم 🎤' : 
                    statusInfo.text === 'Processing...' ? 'اشتغل... 🧠' :
                    statusInfo.text === 'Disconnected' ? 'مو متصلة 😴' : 
@@ -246,6 +293,47 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
         </div>
       </div>
 
+      {/* Name Input Modal */}
+      <Dialog open={showNameInput} onOpenChange={(open) => !open && setShowNameInput(false)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold text-gradient">
+              {state.currentLanguage === 'ar' ? '🤗 أهلاً وسهلاً!' : '🤗 Welcome!'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center mb-6">
+              <p className="text-gray-600 dark:text-gray-300">
+                {state.currentLanguage === 'ar' 
+                  ? 'شنو اسمك حتى أعرف كيف أكلمك؟ 😊'
+                  : 'What\'s your name so I know how to talk to you? 😊'
+                }
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userName" className="text-sm font-medium">
+                {state.currentLanguage === 'ar' ? 'الاسم' : 'Name'}
+              </Label>
+              <Input
+                id="userName"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder={state.currentLanguage === 'ar' ? 'ادخل اسمك...' : 'Enter your name...'}
+                className="text-center"
+                onKeyPress={(e) => e.key === 'Enter' && handleNameSubmit()}
+              />
+            </div>
+            <Button 
+              onClick={handleNameSubmit} 
+              disabled={!userName.trim()}
+              className="w-full btn-neon"
+            >
+              {state.currentLanguage === 'ar' ? '✨ يلا نبدأ!' : '✨ Let\'s Start!'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Conversation Area with Gen Z styling */}
@@ -286,17 +374,29 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                           <MessageCircle className="h-12 w-12 text-white" />
                         </div>
                         <h3 className="text-2xl font-bold text-gradient mb-3">
-                          {state.currentLanguage === 'ar' ? "هلا والله! 🤗 أنا عميرة" : "Hey there! 🤗 I'm Amira"}
+                          {state.currentLanguage === 'ar' 
+                            ? (userName ? `هلا والله ${userName}! 🤗 أنا أميرة` : "هلا والله! 🤗 أنا أميرة") 
+                            : (userName ? `Hey there ${userName}! 🤗 I'm Amira` : "Hey there! 🤗 I'm Amira")
+                          }
                         </h3>
                         <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed mb-6 font-medium">
                           {state.currentLanguage === 'ar' 
-                            ? "شلونج حبيبتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
-                            : "What's good bestie? 💕 I'm here to help with all your health stuff. Just talk to me like your girl! 🗣️✨"
+                            ? (userGender === 'female' 
+                                ? "شحالِش حبيبتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
+                                : "شحالَك حبيبي؟ 💕 أنا هني أساعدك في أي شي يخص صحتك. كلمني عادي مثل أخوك! 🗣️✨"
+                              )
+                            : "What's good bestie? 💕 I'm here to help with all your health stuff. Just talk to me like your best friend! 🗣️✨"
                           }
                         </p>
                         <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-sm font-bold shadow-lg">
                           <Heart className="h-5 w-5" />
-                          {state.currentLanguage === 'ar' ? "دايماً استشيري الدكتور للقرارات المهمة 👩‍⚕️" : "Always check with your doc for the big stuff 👩‍⚕️"}
+                          {state.currentLanguage === 'ar' 
+                            ? (userGender === 'female' 
+                                ? "دايماً استشيري الدكتور للقرارات المهمة 👩‍⚕️" 
+                                : "دايماً استشر الدكتور للقرارات المهمة 👨‍⚕️"
+                              )
+                            : "Always check with your doc for the big stuff 👩‍⚕️"
+                          }
                         </div>
                       </div>
                     </div>
