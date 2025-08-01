@@ -66,7 +66,7 @@ export class VoiceService {
 
     this.openRouterConfig = {
       apiKey: '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',
-      model: 'meta-llama/llama-3.1-8b-instruct:free',
+      model: 'meta-llama/llama-3.1-8b-instruct',
       baseUrl: 'https://openrouter.ai/api/v1'
     };
     
