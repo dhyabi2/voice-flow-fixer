@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { openSourceVoiceService as voiceService } from '@/services/openSourceVoiceService';
+import { openRouterVoiceService as voiceService } from '@/services/openSourceVoiceService';
 import { translationService } from '@/services/translationService';
 import { VoiceState, VoiceMessage } from '@/types/voice';
 import { useToast } from '@/hooks/use-toast';

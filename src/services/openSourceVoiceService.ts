@@ -1,25 +1,28 @@
-// Open Source TTS Service with Female Default Voice
+// OpenRouter-Enhanced Voice Service with Human-like TTS
 import { pipeline } from '@huggingface/transformers';
 import { VoiceState, VoiceMessage } from '@/types/voice';
 import { debugLogger } from '@/utils/debugLogger';
+import { supabase } from '@/integrations/supabase/client';
 
-interface OpenSourceTTSConfig {
+interface OpenRouterVoiceConfig {
   models: {
-    arabic: string;
-    english: string;
+    textEnhancement: string; // OpenRouter model for text enhancement
+    ttsBackup: string;       // Backup TTS model
   };
   voiceSettings: {
     rate: number;
     pitch: number;
     volume: number;
+    humanization: boolean;   // Enable OpenRouter text enhancement
   };
 }
 
-export class OpenSourceVoiceService {
+export class OpenRouterVoiceService {
   private recognition: SpeechRecognition | null = null;
   private ttsModel: any = null;
   private audioContext: AudioContext | null = null;
-  private config: OpenSourceTTSConfig;
+  private config: OpenRouterVoiceConfig;
+  private isEnhancementEnabled: boolean = true;
   
   private stateListeners: Set<(state: VoiceState) => void> = new Set();
   private messageListeners: Set<(message: VoiceMessage) => void> = new Set();
@@ -36,14 +39,14 @@ export class OpenSourceVoiceService {
   constructor() {
     this.config = {
       models: {
-        // Using female-voiced models
-        arabic: 'microsoft/speecht5_tts', // Supports multiple languages including Arabic
-        english: 'microsoft/speecht5_tts' // Female-default TTS model
+        textEnhancement: 'meta-llama/llama-3.1-70b-instruct', // For human-like text enhancement
+        ttsBackup: 'microsoft/speecht5_tts' // Backup TTS model
       },
       voiceSettings: {
         rate: 0.8,
         pitch: 1.1, // Higher pitch for female voice
-        volume: 0.9
+        volume: 0.9,
+        humanization: true // Enable OpenRouter enhancement by default
       }
     };
     
@@ -55,40 +58,39 @@ export class OpenSourceVoiceService {
       // Initialize audio context
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      // Initialize speech recognition (keep existing logic)
+      // Initialize speech recognition
       await this.initializeSpeechRecognition();
       
-      debugLogger.info('OPENSOURCE_VOICE', 'Open source voice service initialized');
+      debugLogger.info('OPENROUTER_VOICE', 'OpenRouter voice service initialized');
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'Failed to initialize open source voice service', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'Failed to initialize OpenRouter voice service', { error });
     }
   }
 
   private async initializeTTSModel(): Promise<void> {
     try {
-      console.log('🤖 Loading open source TTS model...');
+      console.log('🤖 Loading backup TTS model...');
       this.updateState({ isProcessing: true });
       
-      // Load the TTS model - using SpeechT5 which supports female voices
+      // Load backup TTS model (for offline use)
       this.ttsModel = await pipeline(
         'text-to-speech',
-        'microsoft/speecht5_tts',
+        this.config.models.ttsBackup,
         {
-          device: 'webgpu', // Use WebGPU for better performance
-          dtype: 'fp16'     // Faster inference
+          device: 'webgpu',
+          dtype: 'fp16'
         }
       );
       
-      console.log('✅ Open source TTS model loaded successfully');
+      console.log('✅ Backup TTS model loaded successfully');
       this.updateState({ isProcessing: false });
       
     } catch (error) {
-      console.error('❌ Failed to load TTS model:', error);
+      console.error('❌ Failed to load backup TTS model:', error);
       this.updateState({ 
-        error: 'Failed to load voice model. Falling back to browser TTS.',
+        error: 'Failed to load backup voice model. Using browser TTS.',
         isProcessing: false 
       });
-      // Fallback to browser TTS
       this.ttsModel = null;
     }
   }
@@ -108,12 +110,12 @@ export class OpenSourceVoiceService {
       this.recognition.lang = this.currentState.currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
 
       this.recognition.onstart = () => {
-        debugLogger.info('OPENSOURCE_VOICE', 'Speech recognition started');
+        debugLogger.info('OPENROUTER_VOICE', 'Speech recognition started');
         this.updateState({ isRecording: true, error: null });
       };
 
       this.recognition.onend = () => {
-        debugLogger.info('OPENSOURCE_VOICE', 'Speech recognition ended');
+        debugLogger.info('OPENROUTER_VOICE', 'Speech recognition ended');
         this.updateState({ isRecording: false });
       };
 
@@ -122,7 +124,7 @@ export class OpenSourceVoiceService {
         if (result.isFinal && result[0].transcript.trim()) {
           const transcript = result[0].transcript.trim();
           
-          debugLogger.info('OPENSOURCE_VOICE', 'Speech recognized', { 
+          debugLogger.info('OPENROUTER_VOICE', 'Speech recognized', { 
             transcript, 
             language: this.currentState.currentLanguage 
           });
@@ -141,7 +143,7 @@ export class OpenSourceVoiceService {
       };
 
       this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-        debugLogger.error('OPENSOURCE_VOICE', 'Speech recognition error', { 
+        debugLogger.error('OPENROUTER_VOICE', 'Speech recognition error', { 
           error: event.error, 
           message: event.message 
         });
@@ -168,7 +170,7 @@ export class OpenSourceVoiceService {
       };
 
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'Failed to initialize speech recognition', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'Failed to initialize speech recognition', { error });
       throw error;
     }
   }
@@ -176,7 +178,7 @@ export class OpenSourceVoiceService {
   // State management methods
   private updateState(updates: Partial<VoiceState>) {
     this.currentState = { ...this.currentState, ...updates };
-    debugLogger.debug('OPENSOURCE_VOICE', 'State updated', this.currentState);
+    debugLogger.debug('OPENROUTER_VOICE', 'State updated', this.currentState);
     this.stateListeners.forEach(listener => listener(this.currentState));
   }
 
@@ -212,10 +214,10 @@ export class OpenSourceVoiceService {
       // Initialize TTS model
       await this.initializeTTSModel();
       
-      debugLogger.info('OPENSOURCE_VOICE', 'Open source voice service initialized successfully');
+      debugLogger.info('OPENROUTER_VOICE', 'OpenRouter voice service initialized successfully');
       this.updateState({ error: null });
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'Failed to initialize open source voice service', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'Failed to initialize OpenRouter voice service', { error });
       this.updateState({ 
         error: 'Could not access microphone. Please check permissions.' 
       });
@@ -227,9 +229,9 @@ export class OpenSourceVoiceService {
     try {
       await this.initialize();
       this.updateState({ isConnected: true, error: null });
-      debugLogger.info('OPENSOURCE_VOICE', 'Connected successfully');
+      debugLogger.info('OPENROUTER_VOICE', 'Connected successfully');
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'Connection failed', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'Connection failed', { error });
       this.updateState({ 
         error: 'Failed to connect to voice service.',
         isConnected: false 
@@ -245,15 +247,15 @@ export class OpenSourceVoiceService {
       }
 
       if (this.currentState.isRecording) {
-        debugLogger.warn('OPENSOURCE_VOICE', 'Already recording');
+        debugLogger.warn('OPENROUTER_VOICE', 'Already recording');
         return;
       }
 
-      debugLogger.info('OPENSOURCE_VOICE', 'Starting speech recognition');
+      debugLogger.info('OPENROUTER_VOICE', 'Starting speech recognition');
       this.recognition.start();
 
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'Failed to start recording', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'Failed to start recording', { error });
       this.updateState({ 
         error: 'Failed to start recording. Please try again.',
         isRecording: false 
@@ -264,13 +266,13 @@ export class OpenSourceVoiceService {
 
   public stopRecording(): void {
     if (this.recognition && this.currentState.isRecording) {
-      debugLogger.info('OPENSOURCE_VOICE', 'Stopping speech recognition');
+      debugLogger.info('OPENROUTER_VOICE', 'Stopping speech recognition');
       this.recognition.stop();
     }
   }
 
   public async switchLanguage(language: 'en' | 'ar'): Promise<void> {
-    debugLogger.info('OPENSOURCE_VOICE', 'Switching language', { 
+    debugLogger.info('OPENROUTER_VOICE', 'Switching language', { 
       from: this.currentState.currentLanguage, 
       to: language 
     });
@@ -281,11 +283,11 @@ export class OpenSourceVoiceService {
       this.recognition.lang = language === 'ar' ? 'ar-SA' : 'en-US';
     }
     
-    debugLogger.info('OPENSOURCE_VOICE', 'Language switched successfully');
+    debugLogger.info('OPENROUTER_VOICE', 'Language switched successfully');
   }
 
   public disconnect(): void {
-    debugLogger.info('OPENSOURCE_VOICE', 'Disconnecting open source voice service');
+    debugLogger.info('OPENROUTER_VOICE', 'Disconnecting OpenRouter voice service');
     
     if (this.recognition && this.currentState.isRecording) {
       this.recognition.stop();
@@ -299,35 +301,81 @@ export class OpenSourceVoiceService {
       error: null
     });
     
-    debugLogger.info('OPENSOURCE_VOICE', 'Disconnected successfully');
+    debugLogger.info('OPENROUTER_VOICE', 'Disconnected successfully');
   }
 
-  // Open Source TTS with Female Default
-  private async speakWithOpenSourceTTS(text: string): Promise<void> {
+  // OpenRouter-Enhanced TTS with Human-like Voice
+  private async speakWithOpenRouterEnhancement(text: string): Promise<void> {
     try {
       this.updateState({ isSpeaking: true });
-      console.log('🎤 Using open source female TTS for:', text);
+      console.log('🎤 Using OpenRouter-enhanced voice for:', text);
       
-      if (!this.ttsModel) {
-        console.log('📢 TTS model not loaded, falling back to enhanced browser TTS');
-        await this.speakWithEnhancedBrowserTTS(text);
-        return;
+      let finalText = text;
+      
+      // Step 1: Enhance text with OpenRouter for more human-like delivery
+      if (this.config.voiceSettings.humanization) {
+        try {
+          finalText = await this.enhanceTextWithOpenRouter(text);
+          console.log('✅ Text enhanced with OpenRouter:', finalText);
+        } catch (error) {
+          console.warn('⚠️ OpenRouter enhancement failed, using original text:', error);
+          finalText = text;
+        }
       }
+      
+      // Step 2: Generate speech with enhanced text
+      await this.generateSpeechFromText(finalText);
+      
+    } catch (error) {
+      console.error('❌ OpenRouter TTS failed:', error);
+      console.log('📢 Falling back to enhanced browser TTS');
+      await this.speakWithEnhancedBrowserTTS(text);
+    }
+  }
 
-      // Generate speech with female voice
-      const output = await this.ttsModel(text, {
-        speaker_embeddings: this.getFemaleVoiceEmbedding(),
-        vocoder: 'hifigan' // High quality vocoder
+  // Enhance text with OpenRouter for more human-like delivery
+  private async enhanceTextWithOpenRouter(text: string): Promise<string> {
+    try {
+      const { data, error } = await supabase.functions.invoke('enhance-voice-text', {
+        body: {
+          text,
+          language: this.currentState.currentLanguage,
+          voiceType: 'human-enhanced'
+        }
       });
 
-      // Play the generated audio
-      await this.playAudioBuffer(output.audio);
+      if (error) {
+        console.error('OpenRouter enhancement error:', error);
+        return text;
+      }
+
+      return data.enhancedText || text;
+    } catch (error) {
+      console.error('Failed to enhance text with OpenRouter:', error);
+      return text;
+    }
+  }
+
+  // Generate speech from enhanced text
+  private async generateSpeechFromText(text: string): Promise<void> {
+    try {
+      // Try open source TTS with enhanced text
+      if (this.ttsModel) {
+        const output = await this.ttsModel(text, {
+          speaker_embeddings: this.getFemaleVoiceEmbedding(),
+          vocoder: 'hifigan'
+        });
+        await this.playAudioBuffer(output.audio);
+        console.log('✅ OpenRouter-enhanced TTS completed');
+      } else {
+        // Fallback to enhanced browser TTS
+        await this.speakWithEnhancedBrowserTTS(text);
+      }
       
-      console.log('✅ Open source TTS completed');
       this.updateState({ isSpeaking: false });
       
     } catch (error) {
-      console.error('❌ Open source TTS failed:', error);
+      console.error('❌ Speech generation failed:', error);
       console.log('📢 Falling back to enhanced browser TTS');
       await this.speakWithEnhancedBrowserTTS(text);
     }
@@ -419,17 +467,17 @@ export class OpenSourceVoiceService {
         utterance.volume = this.config.voiceSettings.volume;
 
         utterance.onstart = () => {
-          debugLogger.info('OPENSOURCE_VOICE', 'Enhanced browser TTS started');
+          debugLogger.info('OPENROUTER_VOICE', 'Enhanced browser TTS started');
         };
 
         utterance.onend = () => {
-          debugLogger.info('OPENSOURCE_VOICE', 'Enhanced browser TTS ended');
+          debugLogger.info('OPENROUTER_VOICE', 'Enhanced browser TTS ended');
           this.updateState({ isSpeaking: false });
           resolve();
         };
 
         utterance.onerror = (event) => {
-          debugLogger.error('OPENSOURCE_VOICE', 'Enhanced browser TTS error', { error: event.error });
+          debugLogger.error('OPENROUTER_VOICE', 'Enhanced browser TTS error', { error: event.error });
           this.updateState({ isSpeaking: false });
           reject(new Error(`Enhanced browser TTS failed: ${event.error}`));
         };
@@ -437,14 +485,14 @@ export class OpenSourceVoiceService {
         synthesis.speak(utterance);
 
       } catch (error) {
-        debugLogger.error('OPENSOURCE_VOICE', 'Failed to speak with enhanced browser TTS', { error });
+        debugLogger.error('OPENROUTER_VOICE', 'Failed to speak with enhanced browser TTS', { error });
         this.updateState({ isSpeaking: false });
         reject(error);
       }
     });
   }
 
-  // Process user message (same logic as original)
+  // Process user message
   private async processUserMessage(text: string): Promise<void> {
     try {
       this.updateState({ isProcessing: true });
@@ -479,11 +527,11 @@ export class OpenSourceVoiceService {
       };
       
       this.messageListeners.forEach(listener => listener(assistantMessage));
-      await this.speakWithOpenSourceTTS(response);
+      await this.speakWithOpenRouterEnhancement(response);
       this.updateState({ isProcessing: false });
 
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'Failed to process user message', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'Failed to process user message', { error });
       this.updateState({ 
         error: 'Failed to process your message. Please try again.',
         isProcessing: false 
@@ -509,7 +557,7 @@ export class OpenSourceVoiceService {
           'Authorization': `Bearer ${openRouterConfig.apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'Open Source Voice Chat AI'
+          'X-Title': 'OpenRouter Voice Chat AI'
         },
         body: JSON.stringify({
           model: openRouterConfig.model,
@@ -535,14 +583,14 @@ export class OpenSourceVoiceService {
       return content;
 
     } catch (error) {
-      debugLogger.error('OPENSOURCE_VOICE', 'AI call failed', { error });
+      debugLogger.error('OPENROUTER_VOICE', 'AI call failed', { error });
       throw error;
     }
   }
 }
 
-// Global open source voice service instance
-export const openSourceVoiceService = new OpenSourceVoiceService();
+// Global OpenRouter voice service instance
+export const openRouterVoiceService = new OpenRouterVoiceService();
 
 // Web Speech API types (reused)
 interface SpeechRecognitionEvent extends Event {
@@ -553,4 +601,25 @@ interface SpeechRecognitionEvent extends Event {
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
   message: string;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+  
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    maxAlternatives: number;
+    start(): void;
+    stop(): void;
+    abort(): void;
+    onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+    onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+  }
 }
