@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { openRouterVoiceService as voiceService } from '@/services/openSourceVoiceService';
+import { EnhancedVoiceService } from '@/services/enhancedVoiceService';
 import { translationService } from '@/services/translationService';
+
+// Initialize the enhanced voice service with ElevenLabs support
+const voiceService = new EnhancedVoiceService();
 import { VoiceState, VoiceMessage } from '@/types/voice';
 import { useToast } from '@/hooks/use-toast';
 
@@ -154,6 +157,16 @@ export function useVoiceChat() {
     });
   }, [toast]);
 
+  // Set ElevenLabs API key
+  const setElevenLabsApiKey = useCallback((apiKey: string) => {
+    voiceService.setElevenLabsApiKey(apiKey);
+    
+    toast({
+      title: "ElevenLabs API Key Set",
+      description: "Voice quality enhanced with ElevenLabs.",
+    });
+  }, [toast]);
+
   // Toggle recording (convenience method)
   const toggleRecording = useCallback(() => {
     if (state.isRecording) {
@@ -206,6 +219,7 @@ export function useVoiceChat() {
     switchLanguage,
     translateMessage,
     clearMessages,
+    setElevenLabsApiKey,
     
     // Computed values
     canRecord: isInitialized && state.isConnected,

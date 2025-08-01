@@ -46,7 +46,8 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
     stopRecording,
     switchLanguage,
     clearMessages,
-    canRecord
+    canRecord,
+    setElevenLabsApiKey
   } = useVoiceChat();
 
   const { t, isRTL } = useTranslation(state.currentLanguage);
@@ -56,7 +57,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   const [showPatients, setShowPatients] = useState(false);
   const [voiceSettings, setVoiceSettings] = useState({
     language: state.currentLanguage,
-    voiceType: 'enhanced' as 'natural' | 'enhanced' | 'premium',
+    voiceType: 'premium' as 'natural' | 'enhanced' | 'premium', // Default to ElevenLabs
     rate: 0.85,
     pitch: 1.1
   });
@@ -206,6 +207,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                       settings={voiceSettings}
                       onSettingsChange={setVoiceSettings}
                       currentLanguage={state.currentLanguage}
+                      onElevenLabsApiKeyChange={setElevenLabsApiKey}
                     />
                     <VoiceTestPanel currentLanguage={state.currentLanguage} />
                   </div>

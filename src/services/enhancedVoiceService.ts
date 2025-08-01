@@ -59,6 +59,12 @@ export class EnhancedVoiceService {
       }
     };
     
+    // Load ElevenLabs API key from localStorage if available
+    const savedApiKey = localStorage.getItem('elevenlabs-api-key');
+    if (savedApiKey) {
+      this.config.elevenLabsApiKey = savedApiKey;
+    }
+    
     this.synthesis = window.speechSynthesis;
     this.initializeServices();
   }
