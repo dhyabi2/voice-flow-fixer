@@ -44,17 +44,17 @@ export class EnhancedVoiceService {
     this.config = {
       voices: {
         ar: {
-          elevenLabs: 'pFZP5JQG7iQjIQuC4Bku', // Lily - good for Arabic
+          elevenLabs: 'EXAVITQu4vr4xnSDxMaL', // Sarah - warm female voice adapted for Arabic
           fallback: 'Microsoft Hoda Desktop - Arabic (Saudi Arabia)'
         },
         en: {
-          elevenLabs: 'EXAVITQu4vr4xnSDxMaL', // Sarah - warm English voice
+          elevenLabs: 'pFZP5JQG7iQjIQuC4Bku', // Lily - natural female English voice
           fallback: 'Microsoft Zira Desktop - English (United States)'
         }
       },
       speechSettings: {
-        rate: 0.85,
-        pitch: 1.0,
+        rate: 0.8, // Slower for more caring delivery
+        pitch: 1.1, // Slightly higher for feminine voice
         volume: 0.9
       }
     };

@@ -3,7 +3,7 @@ export const translations = {
   ar: {
     // Navigation and Main Interface
     'Virtual Nurse Assistant': 'مساعدة الممرضة الافتراضية',
-    'Compassionate healthcare guidance for Oman patients': 'إرشادات رعاية صحية عطوفة لمرضى عُمان',
+    'Compassionate healthcare guidance for Oman patients': 'دعم رعايتك الصحية بكل اهتمام',
     'Nurse Amira': 'الممرضة أميرة',
     'Virtual Healthcare Assistant': 'مساعدة الرعاية الصحية الافتراضية',
     
@@ -75,7 +75,7 @@ export const translations = {
   en: {
     // Keep all English text as is for fallback
     'Virtual Nurse Assistant': 'Virtual Nurse Assistant',
-    'Compassionate healthcare guidance for Oman patients': 'Compassionate healthcare guidance for Oman patients',
+    'Compassionate healthcare guidance for Oman patients': 'دعم رعايتك الصحية بكل اهتمام',
     'Nurse Amira': 'Nurse Amira',
     'Virtual Healthcare Assistant': 'Virtual Healthcare Assistant',
     'Initializing...': 'Initializing...',

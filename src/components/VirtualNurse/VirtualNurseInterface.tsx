@@ -7,6 +7,7 @@ import { Heart, Users, Brain, Mic, MicOff, Volume2, VolumeX } from 'lucide-react
 import { PatientLookup } from './PatientLookup';
 import { MessageList } from '../VoiceChat/MessageList';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
+import { VoiceSettingsPanel } from '../VoiceChat/VoiceSettingsPanel';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { nurseService, type Patient } from '@/services/nurseService';
 import { useTranslation } from '@/utils/translations';
@@ -34,6 +35,12 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
   const [nurseEmotion, setNurseEmotion] = useState<'neutral' | 'caring' | 'concerned' | 'happy'>('neutral');
+  const [voiceSettings, setVoiceSettings] = useState({
+    language: state.currentLanguage,
+    voiceType: 'enhanced' as 'natural' | 'enhanced' | 'premium',
+    rate: 0.85,
+    pitch: 1.1
+  });
 
   useEffect(() => {
     loadRecentPatients();
@@ -112,7 +119,7 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                 <Heart className="h-8 w-8 text-red-500" />
                 {t('Virtual Nurse Assistant')}
               </h1>
-              <p className="text-gray-600 mt-1">{t('Compassionate healthcare guidance for Muscat patients')}</p>
+              <p className="text-gray-600 mt-1">{t('Compassionate healthcare guidance for Oman patients')}</p>
             </div>
             <div className="flex items-center gap-4">
               <Badge variant={status.color as any} className="px-3 py-1">
@@ -206,6 +213,13 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                 )}
               </CardContent>
             </Card>
+
+            {/* Voice Settings Panel */}
+            <VoiceSettingsPanel 
+              settings={voiceSettings}
+              onSettingsChange={setVoiceSettings}
+              currentLanguage={state.currentLanguage}
+            />
 
             {/* Quick Patient Access */}
             <Card>
