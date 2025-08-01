@@ -70,6 +70,8 @@ export class VoiceService {
       baseUrl: 'https://openrouter.ai/api/v1'
     };
     
+    console.log('🚀 VoiceService constructor - API key from localStorage:', this.openRouterConfig.apiKey ? '✅ Present' : '❌ Missing');
+    
     this.synthesis = window.speechSynthesis;
     this.initializeSpeechRecognition();
     debugLogger.info('VOICE_SERVICE', 'VoiceService initialized', { config: this.config });
@@ -245,11 +247,15 @@ export class VoiceService {
   public setApiKey(apiKey: string): void {
     this.openRouterConfig.apiKey = apiKey;
     localStorage.setItem('openrouter-api-key', apiKey);
+    console.log('🔑 API key set:', apiKey ? '✅ Present' : '❌ Empty');
     debugLogger.info('VOICE_SERVICE', 'API key updated');
   }
 
   public hasApiKey(): boolean {
-    return !!this.openRouterConfig.apiKey;
+    const hasKey = !!this.openRouterConfig.apiKey;
+    console.log('🔍 Checking API key:', hasKey ? '✅ Present' : '❌ Missing');
+    console.log('🔍 Current API key value:', this.openRouterConfig.apiKey ? 'sk-...' + this.openRouterConfig.apiKey.slice(-6) : 'null/empty');
+    return hasKey;
   }
 
   public disconnect(): void {
