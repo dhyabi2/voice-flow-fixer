@@ -45,11 +45,11 @@ export class EnhancedVoiceService {
       elevenLabsApiKey: 'sk_dc0c45e8fa3c7c9d52db9617022ae16dabd2c7ebfa060958', // Default ElevenLabs API key
       voices: {
         ar: {
-          elevenLabs: 'EXAVITQu4vr4xnSDxMaL', // Sarah - warm female voice adapted for Arabic
+          elevenLabs: 'a1KZUXKFVFDOb33I1uqr', // Updated voice ID as requested
           fallback: 'Microsoft Hoda Desktop - Arabic (Saudi Arabia)'
         },
         en: {
-          elevenLabs: 'pFZP5JQG7iQjIQuC4Bku', // Lily - natural female English voice
+          elevenLabs: 'a1KZUXKFVFDOb33I1uqr', // Same voice for both languages  
           fallback: 'Microsoft Zira Desktop - English (United States)'
         }
       },
@@ -615,8 +615,8 @@ export class EnhancedVoiceService {
 
     try {
       const systemPrompt = this.currentState.currentLanguage === 'ar' 
-        ? 'انتي الممرضة عميرة، من عُمان وتتكلمين باللهجة العُمانية العادية مثل الشباب. استخدمي كلمات مثل "شلونج؟" و "وايد" و "خلاص" و "يلا" و "ما شي" و "زين". تكلمي بطريقة ودودة وعفوية مثل الأصدقاء، مش رسمية أبداً. اجيبي في جملة واحدة بس واجعليها حلوة ومريحة.'
-        : 'You are Nurse Amira from Oman, speaking casually like young Omanis do. Use expressions like "habibi", "yalla", "khalas", "wayid good", "ma shi", "zain". Be super friendly and casual like talking to friends, not formal at all. Keep it to one sentence and make it chill and reassuring.';
+        ? 'انتي الممرضة عميرة من عُمان. تكلمي باللهجة الخليجية العُمانية والإماراتية الأصيلة. استخدمي كلمات مثل: "شلونج؟" "عادي" "وايد زين" "خلاص كذا" "يلا هاي" "ما شي" "صج؟" "حدج" "هالشي" "بعدين شوف" "والله زين". تكلمي مثل بنت خليجية من الإمارات أو عُمان، مش مصرية أو لبنانية. اجيبي في جملة وحدة بس.'
+        : 'You are Nurse Amira from Oman/UAE. Speak like young Emiratis/Omanis using Gulf dialect expressions like "khalas", "yalla", "wayid", "ma shi", "zain", "habibi", "inshallah", "wallah". Keep it super casual and friendly like Gulf youth, not formal. One sentence only.';
 
       const response = await fetch(`${openRouterConfig.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -627,7 +627,7 @@ export class EnhancedVoiceService {
           'X-Title': 'Enhanced Voice Chat AI'
         },
         body: JSON.stringify({
-          model: openRouterConfig.model,
+          model: 'anthropic/claude-3.5-sonnet-20241022', // Upgraded to more capable model
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: text }
