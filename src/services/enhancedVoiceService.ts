@@ -42,6 +42,7 @@ export class EnhancedVoiceService {
 
   constructor() {
     this.config = {
+      elevenLabsApiKey: 'sk_dc0c45e8fa3c7c9d52db9617022ae16dabd2c7ebfa060958', // Default ElevenLabs API key
       voices: {
         ar: {
           elevenLabs: 'EXAVITQu4vr4xnSDxMaL', // Sarah - warm female voice adapted for Arabic
@@ -59,11 +60,8 @@ export class EnhancedVoiceService {
       }
     };
     
-    // Load ElevenLabs API key from localStorage if available
-    const savedApiKey = localStorage.getItem('elevenlabs-api-key');
-    if (savedApiKey) {
-      this.config.elevenLabsApiKey = savedApiKey;
-    }
+    // Save the API key to localStorage for persistence
+    localStorage.setItem('elevenlabs-api-key', this.config.elevenLabsApiKey);
     
     this.synthesis = window.speechSynthesis;
     this.initializeServices();
