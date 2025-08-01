@@ -382,26 +382,34 @@ export class EnhancedVoiceService {
         const utterance = new SpeechSynthesisUtterance(text);
         const voices = this.synthesis.getVoices();
         
-        // Enhanced voice selection
+        // Enhanced voice selection - prioritize female voices
         const targetLang = this.currentState.currentLanguage === 'ar' ? 'ar' : 'en';
-        const fallbackName = this.config.voices[this.currentState.currentLanguage].fallback;
         
-        // Try to find the best voice
-        let selectedVoice = voices.find(voice => 
-          voice.name.includes(fallbackName.split(' - ')[0])
-        );
+        // Define female voice patterns
+        const femaleVoicePatterns = [
+          'female', 'zira', 'hoda', 'sara', 'lily', 'cortana', 'hazel', 'susan'
+        ];
         
+        // First try: find female voices of target language
+        let selectedVoice = voices.find(voice => {
+          const langMatch = voice.lang.includes(targetLang);
+          const isFemale = femaleVoicePatterns.some(pattern => 
+            voice.name.toLowerCase().includes(pattern)
+          );
+          return langMatch && isFemale;
+        });
+        
+        // Second try: any Microsoft/Google voice of target language
         if (!selectedVoice) {
-          // Fallback to any voice of the target language
           selectedVoice = voices.find(voice => 
             voice.lang.includes(targetLang) && (
-              voice.name.includes('Google') || 
-              voice.name.includes('Microsoft') ||
-              voice.name.includes('System')
+              voice.name.includes('Microsoft') || 
+              voice.name.includes('Google')
             )
           );
         }
         
+        // Third try: any voice of target language
         if (!selectedVoice) {
           selectedVoice = voices.find(voice => voice.lang.includes(targetLang));
         }
@@ -410,8 +418,20 @@ export class EnhancedVoiceService {
           utterance.voice = selectedVoice;
           debugLogger.info('ENHANCED_VOICE', 'Selected voice', { 
             name: selectedVoice.name, 
-            lang: selectedVoice.lang 
+            lang: selectedVoice.lang,
+            isFemale: femaleVoicePatterns.some(pattern => 
+              selectedVoice!.name.toLowerCase().includes(pattern)
+            )
           });
+          console.log('🎤 Using voice:', {
+            name: selectedVoice.name,
+            language: selectedVoice.lang,
+            gender: femaleVoicePatterns.some(pattern => 
+              selectedVoice!.name.toLowerCase().includes(pattern)
+            ) ? 'Female' : 'Unknown'
+          });
+        } else {
+          console.warn('⚠️ No suitable voice found for language:', targetLang);
         }
         
         // Enhanced speech settings

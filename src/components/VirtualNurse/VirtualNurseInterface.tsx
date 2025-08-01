@@ -8,6 +8,7 @@ import { PatientLookup } from './PatientLookup';
 import { MessageList } from '../VoiceChat/MessageList';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
 import { VoiceSettingsPanel } from '../VoiceChat/VoiceSettingsPanel';
+import { VoiceTestPanel } from '../VoiceChat/VoiceTestPanel';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { nurseService, type Patient } from '@/services/nurseService';
 import { useTranslation } from '@/utils/translations';
@@ -213,6 +214,9 @@ export function VirtualNurseInterface({ className }: VirtualNurseInterfaceProps)
                 )}
               </CardContent>
             </Card>
+
+            {/* Voice Test Panel */}
+            <VoiceTestPanel currentLanguage={state.currentLanguage} />
 
             {/* Voice Settings Panel */}
             <VoiceSettingsPanel 
