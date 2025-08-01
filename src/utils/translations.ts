@@ -3,8 +3,8 @@ export const translations = {
   ar: {
     // Navigation and Main Interface
     'Virtual Nurse Assistant': 'مساعدة الممرضة الافتراضية',
-    'Compassionate healthcare guidance for Muscat patients': 'إرشادات رعاية صحية عطوفة لمرضى مسقط',
-    'Nurse Amira': 'الممرضة عميرة',
+    'Compassionate healthcare guidance for Oman patients': 'إرشادات رعاية صحية عطوفة لمرضى عُمان',
+    'Nurse Amira': 'الممرضة أميرة',
     'Virtual Healthcare Assistant': 'مساعدة الرعاية الصحية الافتراضية',
     
     // Status Messages
@@ -21,7 +21,7 @@ export const translations = {
     
     // Voice Controls
     'Voice Controls': 'التحكم الصوتي',
-    'Connect to Nurse Amira': 'الاتصال بالممرضة عميرة',
+    'Connect to Nurse Amira': 'الاتصال بالممرضة أميرة',
     'Talk': 'تحدث',
     'Stop': 'توقف',
     'Disconnect': 'قطع الاتصال',
@@ -51,7 +51,7 @@ export const translations = {
     'Musculoskeletal': 'العضلات والعظام',
     
     // Welcome Message
-    'Hello, I\'m Nurse Amira': 'مرحباً، أنا الممرضة عميرة',
+    'Hello, I\'m Nurse Amira': 'مرحباً، أنا الممرضة أميرة',
     'I\'m here to provide caring healthcare guidance and support. Feel free to ask about symptoms, medications, appointments, or general health concerns.': 'أنا هنا لتقديم إرشادات رعاية صحية عطوفة ودعم. لا تترددوا في السؤال عن الأعراض أو الأدوية أو المواعيد أو المخاوف الصحية العامة.',
     'Note: I provide guidance only. Always consult your doctor for medical decisions.': 'ملاحظة: أقدم الإرشادات فقط. استشيروا طبيبكم دائماً للقرارات الطبية.',
     
@@ -60,7 +60,7 @@ export const translations = {
     'Switch to English': 'التبديل إلى الإنجليزية',
     
     // Toast Messages
-    'Connected to Nurse Amira': 'تم الاتصال بالممرضة عميرة',
+    'Connected to Nurse Amira': 'تم الاتصال بالممرضة أميرة',
     'Failed to connect to voice service': 'فشل في الاتصال بخدمة الصوت',
     'Disconnected from voice service': 'تم قطع الاتصال عن خدمة الصوت',
     'Selected patient:': 'تم اختيار المريض:',
@@ -75,7 +75,7 @@ export const translations = {
   en: {
     // Keep all English text as is for fallback
     'Virtual Nurse Assistant': 'Virtual Nurse Assistant',
-    'Compassionate healthcare guidance for Muscat patients': 'Compassionate healthcare guidance for Muscat patients',
+    'Compassionate healthcare guidance for Oman patients': 'Compassionate healthcare guidance for Oman patients',
     'Nurse Amira': 'Nurse Amira',
     'Virtual Healthcare Assistant': 'Virtual Healthcare Assistant',
     'Initializing...': 'Initializing...',
