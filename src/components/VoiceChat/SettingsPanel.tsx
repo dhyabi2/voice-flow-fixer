@@ -5,7 +5,9 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Volume2, Mic, Zap, Globe, Shield, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Settings, Volume2, Mic, Zap, Globe, Shield, Info, Key } from 'lucide-react';
+import { voiceService } from '@/services/voiceService';
 import { cn } from '@/lib/utils';
 
 interface SettingsPanelProps {
@@ -20,6 +22,12 @@ export function SettingsPanel({ isOpen, onToggle, className }: SettingsPanelProp
   const [micSensitivity, setMicSensitivity] = useState([70]);
   const [fastResponse, setFastResponse] = useState(true);
   const [saveHistory, setSaveHistory] = useState(true);
+  const [apiKey, setApiKey] = useState(localStorage.getItem('openrouter-api-key') || '');
+
+  const handleApiKeyChange = (value: string) => {
+    setApiKey(value);
+    voiceService.setApiKey(value);
+  };
 
   if (!isOpen) {
     return (
@@ -55,6 +63,43 @@ export function SettingsPanel({ isOpen, onToggle, className }: SettingsPanelProp
       </CardHeader>
       
       <CardContent className="space-y-6">
+        {/* API Configuration */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            API Configuration
+          </h3>
+          
+          <div className="space-y-2">
+            <label className="text-sm">OpenRouter API Key</label>
+            <Input
+              type="password"
+              placeholder="Enter your OpenRouter API key"
+              value={apiKey}
+              onChange={(e) => handleApiKeyChange(e.target.value)}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground">
+              Required for AI responses. Get your key from{' '}
+              <a 
+                href="https://openrouter.ai/keys" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                openrouter.ai
+              </a>
+            </p>
+            {!apiKey && (
+              <div className="text-xs text-destructive">
+                ⚠️ API key required for voice responses
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Separator />
+
         {/* Audio Settings */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium flex items-center gap-2">

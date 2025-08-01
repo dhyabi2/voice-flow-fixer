@@ -65,7 +65,7 @@ export class VoiceService {
     };
 
     this.openRouterConfig = {
-      apiKey: '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',
+      apiKey: localStorage.getItem('openrouter-api-key') || '',
       model: 'meta-llama/llama-3.1-8b-instruct:free',
       baseUrl: 'https://openrouter.ai/api/v1'
     };
@@ -242,6 +242,16 @@ export class VoiceService {
     debugLogger.info('VOICE_SERVICE', 'Language switched successfully');
   }
 
+  public setApiKey(apiKey: string): void {
+    this.openRouterConfig.apiKey = apiKey;
+    localStorage.setItem('openrouter-api-key', apiKey);
+    debugLogger.info('VOICE_SERVICE', 'API key updated');
+  }
+
+  public hasApiKey(): boolean {
+    return !!this.openRouterConfig.apiKey;
+  }
+
   public disconnect(): void {
     debugLogger.info('VOICE_SERVICE', 'Disconnecting voice service');
     
@@ -299,6 +309,10 @@ export class VoiceService {
 
   private async callOpenRouter(text: string): Promise<string> {
     try {
+      if (!this.openRouterConfig.apiKey) {
+        throw new Error('OpenRouter API key is required. Please add your API key in the settings.');
+      }
+
       const systemPrompt = this.currentState.currentLanguage === 'ar' 
         ? 'أنت مساعد ذكي يتحدث العربية. قدم إجابات مفيدة ومختصرة في جملة أو جملتين فقط.'
         : 'You are a helpful AI assistant. Provide concise and useful responses in 1-2 sentences only.';
