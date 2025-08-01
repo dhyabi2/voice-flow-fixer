@@ -382,8 +382,8 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                         <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed mb-6 font-medium">
                           {state.currentLanguage === 'ar' 
                             ? (userGender === 'female' 
-                                ? "شحالِش حبيبتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
-                                : "شحالَك حبيبي؟ 💕 أنا هني أساعدك في أي شي يخص صحتك. كلمني عادي مثل أخوك! 🗣️✨"
+                                ? "شحالِش عزيزتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
+                                : "شحالَك عزيزي؟ 💕 أنا هني أساعدك في أي شي يخص صحتك. كلمني عادي مثل أخوك! 🗣️✨"
                               )
                             : "What's good bestie? 💕 I'm here to help with all your health stuff. Just talk to me like your best friend! 🗣️✨"
                           }

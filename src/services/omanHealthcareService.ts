@@ -19,7 +19,7 @@ interface PerplexityResponse {
 }
 
 export class OmanHealthcareService {
-  private static PERPLEXITY_API_KEY = 'pplx-7c8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e'; // Default key
+  private static PERPLEXITY_API_KEY = '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';
   private static PERPLEXITY_BASE_URL = 'https://api.perplexity.ai/chat/completions';
   
   // Static comprehensive database of Oman healthcare facilities
