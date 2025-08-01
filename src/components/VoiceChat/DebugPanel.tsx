@@ -19,15 +19,15 @@ export function DebugPanel({ isOpen, onToggle, className }: DebugPanelProps) {
   const [filterLevel, setFilterLevel] = useState<LogLevel>(LogLevel.DEBUG);
 
   useEffect(() => {
-    if (isOpen) {
-      setLogs(debugLogger.getLogs());
-      
-      const unsubscribe = debugLogger.onLog((entry) => {
-        setLogs(prev => [...prev, entry]);
-      });
+    if (!isOpen) return;
 
-      return unsubscribe;
-    }
+    setLogs(debugLogger.getLogs());
+    
+    const unsubscribe = debugLogger.onLog((entry) => {
+      setLogs(prev => [...prev, entry]);
+    });
+
+    return unsubscribe;
   }, [isOpen]);
 
   const filteredLogs = logs.filter(log => log.level >= filterLevel);
