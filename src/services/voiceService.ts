@@ -277,10 +277,13 @@ export class VoiceService {
   // Private methods
   private async processUserMessage(text: string): Promise<void> {
     try {
+      console.log('🎯 Processing user message:', text);
       this.updateState({ isProcessing: true });
       debugLogger.info('VOICE_SERVICE', 'Processing user message', { text });
 
+      console.log('🌐 Calling OpenRouter API...');
       const response = await this.callOpenRouter(text);
+      console.log('✅ OpenRouter response received:', response);
       
       const assistantMessage: VoiceMessage = {
         id: crypto.randomUUID(),
@@ -290,15 +293,19 @@ export class VoiceService {
         language: this.currentState.currentLanguage
       };
       
+      console.log('📤 Sending assistant message to listeners:', assistantMessage);
       this.messageListeners.forEach(listener => listener(assistantMessage));
       
       // Speak the response
+      console.log('🔊 Starting speech synthesis...');
       await this.speakText(response);
+      console.log('✅ Speech synthesis completed');
       
       this.updateState({ isProcessing: false });
       debugLogger.info('VOICE_SERVICE', 'Message processed successfully');
 
     } catch (error) {
+      console.error('❌ Failed to process user message:', error);
       debugLogger.error('VOICE_SERVICE', 'Failed to process user message', { error });
       this.updateState({ 
         error: 'Failed to process your message. Please try again.',
@@ -309,14 +316,17 @@ export class VoiceService {
 
   private async callOpenRouter(text: string): Promise<string> {
     try {
+      console.log('🔑 Checking API key...');
       if (!this.openRouterConfig.apiKey) {
         throw new Error('OpenRouter API key is required. Please add your API key in the settings.');
       }
+      console.log('✅ API key present');
 
       const systemPrompt = this.currentState.currentLanguage === 'ar' 
         ? 'أنت مساعد ذكي يتحدث العربية. قدم إجابات مفيدة ومختصرة في جملة أو جملتين فقط.'
         : 'You are a helpful AI assistant. Provide concise and useful responses in 1-2 sentences only.';
 
+      console.log('📡 Making API request to OpenRouter...');
       const response = await fetch(`${this.openRouterConfig.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -336,16 +346,25 @@ export class VoiceService {
         })
       });
 
+      console.log('📡 API Response status:', response.status, response.statusText);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', response.status, response.statusText, errorText);
         throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
       }
 
+      console.log('📊 Parsing response...');
       const data = await response.json();
+      console.log('📊 Response data:', data);
       debugLogger.info('VOICE_SERVICE', 'OpenRouter response received', { data });
       
-      return data.choices?.[0]?.message?.content || 'I apologize, but I could not generate a response.';
+      const content = data.choices?.[0]?.message?.content || 'I apologize, but I could not generate a response.';
+      console.log('💬 Extracted content:', content);
+      return content;
 
     } catch (error) {
+      console.error('❌ OpenRouter API call failed:', error);
       debugLogger.error('VOICE_SERVICE', 'OpenRouter API call failed', { error });
       throw error;
     }
@@ -354,7 +373,9 @@ export class VoiceService {
   private async speakText(text: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        console.log('🎤 Starting speech synthesis for:', text);
         if (this.synthesis.speaking) {
+          console.log('🛑 Canceling previous speech...');
           this.synthesis.cancel();
         }
 
@@ -365,26 +386,30 @@ export class VoiceService {
         utterance.volume = 1;
 
         utterance.onstart = () => {
+          console.log('🔊 Speech synthesis started');
           debugLogger.info('VOICE_SERVICE', 'Speech synthesis started');
           this.updateState({ isSpeaking: true });
         };
 
         utterance.onend = () => {
+          console.log('✅ Speech synthesis ended');
           debugLogger.info('VOICE_SERVICE', 'Speech synthesis ended');
           this.updateState({ isSpeaking: false });
           resolve();
         };
 
         utterance.onerror = (event) => {
+          console.error('❌ Speech synthesis error:', event.error);
           debugLogger.error('VOICE_SERVICE', 'Speech synthesis error', { error: event.error });
           this.updateState({ isSpeaking: false });
           reject(new Error(`Speech synthesis failed: ${event.error}`));
         };
 
+        console.log('🎯 Calling synthesis.speak()...');
         this.synthesis.speak(utterance);
 
       } catch (error) {
-        debugLogger.error('VOICE_SERVICE', 'Failed to speak text', { error });
+        console.error('❌ Failed to speak text:', error);
         this.updateState({ isSpeaking: false });
         reject(error);
       }
