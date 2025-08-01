@@ -1,13 +1,47 @@
 import { VoiceState, VoiceMessage, VoiceConfig, PipecatConfig } from '@/types/voice';
 import { debugLogger } from '@/utils/debugLogger';
 
+// Web Speech API types
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message: string;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+  
+  interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    maxAlternatives: number;
+    start(): void;
+    stop(): void;
+    abort(): void;
+    onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+    onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+  }
+}
+
 export class VoiceService {
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioContext: AudioContext | null = null;
-  private websocket: WebSocket | null = null;
-  private stream: MediaStream | null = null;
+  private recognition: SpeechRecognition | null = null;
+  private synthesis: SpeechSynthesis;
   private config: VoiceConfig;
-  private pipecatConfig: PipecatConfig;
+  private openRouterConfig: {
+    apiKey: string;
+    model: string;
+    baseUrl: string;
+  };
   
   private stateListeners: Set<(state: VoiceState) => void> = new Set();
   private messageListeners: Set<(message: VoiceMessage) => void> = new Set();
@@ -30,19 +64,78 @@ export class VoiceService {
       silenceTimeout: 1500
     };
 
-    this.pipecatConfig = {
-      wsUrl: 'wss://api.pipecat.ai/v1/ws',
+    this.openRouterConfig = {
       apiKey: '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',
       model: 'meta-llama/llama-3.1-8b-instruct:free',
-      voice: 'en-US-Journey-D',
-      language: 'en'
+      baseUrl: 'https://openrouter.ai/api/v1'
     };
+    
+    this.synthesis = window.speechSynthesis;
+    this.initializeSpeechRecognition();
     debugLogger.info('VOICE_SERVICE', 'VoiceService initialized', { config: this.config });
+  }
+
+  private initializeSpeechRecognition(): void {
+    try {
+      const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognitionConstructor) {
+        throw new Error('Speech recognition not supported in this browser');
+      }
+
+      this.recognition = new SpeechRecognitionConstructor();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+      this.recognition.maxAlternatives = 1;
+      this.recognition.lang = this.currentState.currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
+
+      this.recognition.onstart = () => {
+        debugLogger.info('VOICE_SERVICE', 'Speech recognition started');
+        this.updateState({ isRecording: true, error: null });
+      };
+
+      this.recognition.onend = () => {
+        debugLogger.info('VOICE_SERVICE', 'Speech recognition ended');
+        this.updateState({ isRecording: false });
+      };
+
+      this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+        if (event.results.length > 0) {
+          const transcript = event.results[0][0].transcript;
+          debugLogger.info('VOICE_SERVICE', 'Speech recognized', { transcript });
+          
+          const userMessage: VoiceMessage = {
+            id: crypto.randomUUID(),
+            type: 'user',
+            content: transcript,
+            timestamp: new Date(),
+            language: this.currentState.currentLanguage
+          };
+          
+          this.messageListeners.forEach(listener => listener(userMessage));
+          this.processUserMessage(transcript);
+        }
+      };
+
+      this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        debugLogger.error('VOICE_SERVICE', 'Speech recognition error', { error: event.error, message: event.message });
+        this.updateState({ 
+          error: `Speech recognition error: ${event.error}`,
+          isRecording: false 
+        });
+      };
+
+      debugLogger.info('VOICE_SERVICE', 'Speech recognition initialized');
+    } catch (error) {
+      debugLogger.error('VOICE_SERVICE', 'Failed to initialize speech recognition', { error });
+      throw error;
+    }
   }
 
   // State management
   private updateState(updates: Partial<VoiceState>) {
     this.currentState = { ...this.currentState, ...updates };
+    debugLogger.debug('VOICE_SERVICE', 'State updated', this.currentState);
     this.stateListeners.forEach(listener => listener(this.currentState));
   }
 
@@ -52,36 +145,37 @@ export class VoiceService {
 
   public onStateChange(callback: (state: VoiceState) => void) {
     this.stateListeners.add(callback);
-    return () => this.stateListeners.delete(callback);
+    return () => {
+      this.stateListeners.delete(callback);
+    };
   }
 
   public onMessage(callback: (message: VoiceMessage) => void) {
     this.messageListeners.add(callback);
-    return () => this.messageListeners.delete(callback);
+    return () => {
+      this.messageListeners.delete(callback);
+    };
   }
 
   // Core functionality
   public async initialize(): Promise<void> {
     try {
-      // Request microphone permission
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: this.config.sampleRate,
-          channelCount: this.config.channels,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      // Check if speech recognition is available
+      if (!this.recognition) {
+        throw new Error('Speech recognition not available');
+      }
 
-      // Initialize audio context
-      this.audioContext = new AudioContext({ sampleRate: this.config.sampleRate });
-      
+      // Check if speech synthesis is available
+      if (!this.synthesis) {
+        throw new Error('Speech synthesis not available');
+      }
+
+      debugLogger.info('VOICE_SERVICE', 'Voice service initialized successfully');
       this.updateState({ error: null });
     } catch (error) {
-      console.error('Failed to initialize voice service:', error);
+      debugLogger.error('VOICE_SERVICE', 'Failed to initialize voice service', { error });
       this.updateState({ 
-        error: 'Failed to access microphone. Please check permissions.' 
+        error: 'Voice features not supported in this browser.' 
       });
       throw error;
     }
@@ -89,38 +183,14 @@ export class VoiceService {
 
   public async connect(): Promise<void> {
     try {
-      if (!this.stream || !this.audioContext) {
-        await this.initialize();
-      }
-
-      // Connect to Pipecat WebSocket
-      this.websocket = new WebSocket(this.pipecatConfig.wsUrl);
+      await this.initialize();
       
-      this.websocket.onopen = () => {
-        console.log('Connected to Pipecat');
-        this.updateState({ isConnected: true, error: null });
-        this.sendConfig();
-      };
-
-      this.websocket.onmessage = (event) => {
-        this.handleWebSocketMessage(event);
-      };
-
-      this.websocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        this.updateState({ 
-          error: 'Connection failed. Please try again.',
-          isConnected: false 
-        });
-      };
-
-      this.websocket.onclose = () => {
-        console.log('Disconnected from Pipecat');
-        this.updateState({ isConnected: false });
-      };
+      debugLogger.info('VOICE_SERVICE', 'Connecting using Web Speech API + OpenRouter');
+      this.updateState({ isConnected: true, error: null });
+      debugLogger.info('VOICE_SERVICE', 'Connected successfully');
 
     } catch (error) {
-      console.error('Failed to connect:', error);
+      debugLogger.error('VOICE_SERVICE', 'Connection failed', { error });
       this.updateState({ 
         error: 'Failed to connect to voice service.',
         isConnected: false 
@@ -131,33 +201,20 @@ export class VoiceService {
 
   public async startRecording(): Promise<void> {
     try {
-      if (!this.stream) {
-        throw new Error('Voice service not initialized');
+      if (!this.recognition) {
+        throw new Error('Speech recognition not initialized');
       }
 
-      this.mediaRecorder = new MediaRecorder(this.stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      if (this.currentState.isRecording) {
+        debugLogger.warn('VOICE_SERVICE', 'Already recording');
+        return;
+      }
 
-      const audioChunks: Blob[] = [];
-
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.push(event.data);
-          this.processAudioChunk(event.data);
-        }
-      };
-
-      this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        this.sendAudioToServer(audioBlob);
-      };
-
-      this.mediaRecorder.start(100); // Collect data every 100ms
-      this.updateState({ isRecording: true, error: null });
+      debugLogger.info('VOICE_SERVICE', 'Starting speech recognition');
+      this.recognition.start();
 
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      debugLogger.error('VOICE_SERVICE', 'Failed to start recording', { error });
       this.updateState({ 
         error: 'Failed to start recording. Please try again.',
         isRecording: false 
@@ -167,40 +224,33 @@ export class VoiceService {
   }
 
   public stopRecording(): void {
-    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-      this.mediaRecorder.stop();
-      this.updateState({ isRecording: false });
+    if (this.recognition && this.currentState.isRecording) {
+      debugLogger.info('VOICE_SERVICE', 'Stopping speech recognition');
+      this.recognition.stop();
     }
   }
 
   public async switchLanguage(language: 'en' | 'ar'): Promise<void> {
-    this.updateState({ currentLanguage: language });
-    this.pipecatConfig.language = language;
+    debugLogger.info('VOICE_SERVICE', 'Switching language', { from: this.currentState.currentLanguage, to: language });
     
-    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-      this.sendConfig();
+    this.updateState({ currentLanguage: language });
+    
+    if (this.recognition) {
+      this.recognition.lang = language === 'ar' ? 'ar-SA' : 'en-US';
     }
+    
+    debugLogger.info('VOICE_SERVICE', 'Language switched successfully');
   }
 
   public disconnect(): void {
-    if (this.websocket) {
-      this.websocket.close();
-      this.websocket = null;
+    debugLogger.info('VOICE_SERVICE', 'Disconnecting voice service');
+    
+    if (this.recognition && this.currentState.isRecording) {
+      this.recognition.stop();
     }
 
-    if (this.mediaRecorder) {
-      this.mediaRecorder.stop();
-      this.mediaRecorder = null;
-    }
-
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
-
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
+    if (this.synthesis.speaking) {
+      this.synthesis.cancel();
     }
 
     this.updateState({
@@ -210,141 +260,121 @@ export class VoiceService {
       isProcessing: false,
       error: null
     });
+    
+    debugLogger.info('VOICE_SERVICE', 'Disconnected successfully');
   }
 
   // Private methods
-  private sendConfig(): void {
-    if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-      const config = {
-        type: 'config',
-        data: {
-          apiKey: this.pipecatConfig.apiKey,
-          model: this.pipecatConfig.model,
-          voice: this.pipecatConfig.voice,
-          language: this.pipecatConfig.language,
-          systemPrompt: this.currentState.currentLanguage === 'ar' 
-            ? 'أنت مساعد ذكي يتحدث العربية. قدم إجابات مفيدة ومختصرة.'
-            : 'You are a helpful AI assistant. Provide concise and useful responses.',
-          responseFormat: 'structured',
-          maxTokens: 150
-        }
-      };
-      
-      this.websocket.send(JSON.stringify(config));
-    }
-  }
-
-  private processAudioChunk(audioBlob: Blob): void {
-    // Convert audio to appropriate format for Pipecat
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (this.websocket && this.websocket.readyState === WebSocket.OPEN) {
-        const audioData = {
-          type: 'audio',
-          data: reader.result,
-          timestamp: Date.now()
-        };
-        this.websocket.send(JSON.stringify(audioData));
-      }
-    };
-    reader.readAsArrayBuffer(audioBlob);
-  }
-
-  private sendAudioToServer(audioBlob: Blob): void {
-    this.updateState({ isProcessing: true });
-    this.processAudioChunk(audioBlob);
-  }
-
-  private handleWebSocketMessage(event: MessageEvent): void {
+  private async processUserMessage(text: string): Promise<void> {
     try {
-      const message = JSON.parse(event.data);
-      
-      switch (message.type) {
-        case 'transcription':
-          this.handleTranscription(message.data);
-          break;
-        case 'response':
-          this.handleAIResponse(message.data);
-          break;
-        case 'audio':
-          this.handleAudioResponse(message.data);
-          break;
-        case 'error':
-          this.handleError(message.data);
-          break;
-        default:
-          console.log('Unknown message type:', message.type);
-      }
-    } catch (error) {
-      console.error('Failed to parse WebSocket message:', error);
-    }
-  }
+      this.updateState({ isProcessing: true });
+      debugLogger.info('VOICE_SERVICE', 'Processing user message', { text });
 
-  private handleTranscription(data: any): void {
-    if (data.text && data.text.trim()) {
-      const message: VoiceMessage = {
-        id: crypto.randomUUID(),
-        type: 'user',
-        content: data.text,
-        timestamp: new Date(),
-        language: this.currentState.currentLanguage
-      };
+      const response = await this.callOpenRouter(text);
       
-      this.messageListeners.forEach(listener => listener(message));
-    }
-  }
-
-  private handleAIResponse(data: any): void {
-    this.updateState({ isProcessing: false });
-    
-    if (data.text) {
-      const message: VoiceMessage = {
+      const assistantMessage: VoiceMessage = {
         id: crypto.randomUUID(),
         type: 'assistant',
-        content: data.text,
+        content: response,
         timestamp: new Date(),
         language: this.currentState.currentLanguage
       };
       
-      this.messageListeners.forEach(listener => listener(message));
-    }
-  }
-
-  private handleAudioResponse(data: any): void {
-    if (data.audio) {
-      this.updateState({ isSpeaking: true });
-      this.playAudio(data.audio).finally(() => {
-        this.updateState({ isSpeaking: false });
-      });
-    }
-  }
-
-  private handleError(data: any): void {
-    console.error('Server error:', data);
-    this.updateState({ 
-      error: data.message || 'An error occurred during voice processing',
-      isProcessing: false 
-    });
-  }
-
-  private async playAudio(audioData: string): Promise<void> {
-    try {
-      const audioBlob = new Blob([audioData], { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
+      this.messageListeners.forEach(listener => listener(assistantMessage));
       
-      return new Promise((resolve, reject) => {
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-        audio.onerror = reject;
-        audio.play();
-      });
+      // Speak the response
+      await this.speakText(response);
+      
+      this.updateState({ isProcessing: false });
+      debugLogger.info('VOICE_SERVICE', 'Message processed successfully');
+
     } catch (error) {
-      console.error('Failed to play audio:', error);
+      debugLogger.error('VOICE_SERVICE', 'Failed to process user message', { error });
+      this.updateState({ 
+        error: 'Failed to process your message. Please try again.',
+        isProcessing: false 
+      });
+    }
+  }
+
+  private async callOpenRouter(text: string): Promise<string> {
+    try {
+      const systemPrompt = this.currentState.currentLanguage === 'ar' 
+        ? 'أنت مساعد ذكي يتحدث العربية. قدم إجابات مفيدة ومختصرة في جملة أو جملتين فقط.'
+        : 'You are a helpful AI assistant. Provide concise and useful responses in 1-2 sentences only.';
+
+      const response = await fetch(`${this.openRouterConfig.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.openRouterConfig.apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Voice Chat AI'
+        },
+        body: JSON.stringify({
+          model: this.openRouterConfig.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: text }
+          ],
+          max_tokens: 150,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      debugLogger.info('VOICE_SERVICE', 'OpenRouter response received', { data });
+      
+      return data.choices?.[0]?.message?.content || 'I apologize, but I could not generate a response.';
+
+    } catch (error) {
+      debugLogger.error('VOICE_SERVICE', 'OpenRouter API call failed', { error });
       throw error;
     }
+  }
+
+  private async speakText(text: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        if (this.synthesis.speaking) {
+          this.synthesis.cancel();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = this.currentState.currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onstart = () => {
+          debugLogger.info('VOICE_SERVICE', 'Speech synthesis started');
+          this.updateState({ isSpeaking: true });
+        };
+
+        utterance.onend = () => {
+          debugLogger.info('VOICE_SERVICE', 'Speech synthesis ended');
+          this.updateState({ isSpeaking: false });
+          resolve();
+        };
+
+        utterance.onerror = (event) => {
+          debugLogger.error('VOICE_SERVICE', 'Speech synthesis error', { error: event.error });
+          this.updateState({ isSpeaking: false });
+          reject(new Error(`Speech synthesis failed: ${event.error}`));
+        };
+
+        this.synthesis.speak(utterance);
+
+      } catch (error) {
+        debugLogger.error('VOICE_SERVICE', 'Failed to speak text', { error });
+        this.updateState({ isSpeaking: false });
+        reject(error);
+      }
+    });
   }
 }
 
