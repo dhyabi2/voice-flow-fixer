@@ -382,56 +382,99 @@ export class EnhancedVoiceService {
         const utterance = new SpeechSynthesisUtterance(text);
         const voices = this.synthesis.getVoices();
         
-        // Enhanced voice selection - prioritize female voices
+        // Enhanced voice selection - prioritize female voices and EXCLUDE male voices
         const targetLang = this.currentState.currentLanguage === 'ar' ? 'ar' : 'en';
         
-        // Define female voice patterns
+        // Define female voice patterns (comprehensive list)
         const femaleVoicePatterns = [
-          'female', 'zira', 'hoda', 'sara', 'lily', 'cortana', 'hazel', 'susan'
+          // English female names
+          'female', 'zira', 'sara', 'lily', 'cortana', 'hazel', 'susan', 'emma', 'ava', 'aria',
+          'eva', 'amy', 'kate', 'anna', 'mary', 'jenny', 'sophia', 'olivia', 'isabella',
+          // Arabic female names  
+          'hoda', 'amira', 'aisha', 'fatima', 'khadija', 'maryam', 'zahra', 'layla', 'nour',
+          'salma', 'rania', 'dina', 'maya', 'lina', 'yasmin', 'rana', 'sara'
         ];
         
-        // First try: find female voices of target language
+        // Define male voice patterns to EXCLUDE
+        const maleVoicePatterns = [
+          // English male names
+          'male', 'david', 'mark', 'paul', 'richard', 'james', 'john', 'michael', 'william',
+          'daniel', 'matthew', 'christopher', 'andrew', 'joshua', 'ryan', 'brandon',
+          // Arabic male names
+          'naayf', 'ahmed', 'mohammed', 'omar', 'ali', 'hassan', 'khalid', 'youssef', 'amr',
+          'tamer', 'kareem', 'fadi', 'rami', 'waleed', 'sami', 'tariq', 'nasser', 'abdulla'
+        ];
+        
+        console.log('🔍 Available voices for', targetLang + ':', voices.filter(v => v.lang.includes(targetLang)).map(v => ({
+          name: v.name,
+          lang: v.lang,
+          isFemale: femaleVoicePatterns.some(pattern => v.name.toLowerCase().includes(pattern)),
+          isMale: maleVoicePatterns.some(pattern => v.name.toLowerCase().includes(pattern))
+        })));
+        
+        // First try: find FEMALE voices and EXCLUDE male voices
         let selectedVoice = voices.find(voice => {
           const langMatch = voice.lang.includes(targetLang);
           const isFemale = femaleVoicePatterns.some(pattern => 
             voice.name.toLowerCase().includes(pattern)
           );
-          return langMatch && isFemale;
+          const isMale = maleVoicePatterns.some(pattern => 
+            voice.name.toLowerCase().includes(pattern)
+          );
+          
+          console.log('🔍 Checking voice:', voice.name, { langMatch, isFemale, isMale });
+          
+          return langMatch && isFemale && !isMale; // Must be female AND not male
         });
         
-        // Second try: any Microsoft/Google voice of target language
+        // Second try: any non-male voice of target language
         if (!selectedVoice) {
-          selectedVoice = voices.find(voice => 
-            voice.lang.includes(targetLang) && (
-              voice.name.includes('Microsoft') || 
-              voice.name.includes('Google')
-            )
-          );
+          console.log('⚠️ No female voice found, trying non-male voices...');
+          selectedVoice = voices.find(voice => {
+            const langMatch = voice.lang.includes(targetLang);
+            const isMale = maleVoicePatterns.some(pattern => 
+              voice.name.toLowerCase().includes(pattern)
+            );
+            return langMatch && !isMale; // Exclude male voices
+          });
         }
         
-        // Third try: any voice of target language
+        // Third try: any voice of target language (last resort)
         if (!selectedVoice) {
+          console.log('⚠️ No non-male voice found, using any available voice...');
           selectedVoice = voices.find(voice => voice.lang.includes(targetLang));
         }
         
         if (selectedVoice) {
+          const isFemale = femaleVoicePatterns.some(pattern => 
+            selectedVoice!.name.toLowerCase().includes(pattern)
+          );
+          const isMale = maleVoicePatterns.some(pattern => 
+            selectedVoice!.name.toLowerCase().includes(pattern)
+          );
+          
           utterance.voice = selectedVoice;
+          
+          const genderInfo = isFemale ? 'Female ✅' : isMale ? 'Male ❌' : 'Unknown';
+          
           debugLogger.info('ENHANCED_VOICE', 'Selected voice', { 
             name: selectedVoice.name, 
             lang: selectedVoice.lang,
-            isFemale: femaleVoicePatterns.some(pattern => 
-              selectedVoice!.name.toLowerCase().includes(pattern)
-            )
+            gender: genderInfo
           });
-          console.log('🎤 Using voice:', {
+          
+          console.log('🎤 FINAL VOICE SELECTION:', {
             name: selectedVoice.name,
             language: selectedVoice.lang,
-            gender: femaleVoicePatterns.some(pattern => 
-              selectedVoice!.name.toLowerCase().includes(pattern)
-            ) ? 'Female' : 'Unknown'
+            gender: genderInfo,
+            targetWasFemale: true
           });
+          
+          if (isMale) {
+            console.error('🚨 CRITICAL: MALE VOICE SELECTED - THIS IS A BUG!');
+          }
         } else {
-          console.warn('⚠️ No suitable voice found for language:', targetLang);
+          console.error('⚠️ No suitable voice found for language:', targetLang);
         }
         
         // Enhanced speech settings

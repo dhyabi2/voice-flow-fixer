@@ -74,13 +74,26 @@ export function VoiceTestPanel({ currentLanguage }: VoiceTestProps) {
 
   const femaleVoices = availableVoices.filter(voice => {
     const langMatch = currentLanguage === 'ar' ? voice.lang.includes('ar') : voice.lang.includes('en');
+    
+    // Enhanced female detection patterns
     const femaleIndicators = [
-      'female', 'zira', 'hoda', 'sara', 'lily', 'cortana', 'hazel'
+      'female', 'zira', 'hoda', 'sara', 'lily', 'cortana', 'hazel', 'susan', 'amira', 'aisha', 
+      'fatima', 'maryam', 'zahra', 'layla', 'emma', 'ava', 'aria', 'eva', 'amy'
     ];
+    
+    // Male patterns to EXCLUDE
+    const maleIndicators = [
+      'male', 'naayf', 'david', 'mark', 'ahmed', 'mohammed', 'omar', 'ali', 'hassan'
+    ];
+    
     const isFemale = femaleIndicators.some(indicator => 
       voice.name.toLowerCase().includes(indicator)
     );
-    return langMatch && isFemale;
+    const isMale = maleIndicators.some(indicator => 
+      voice.name.toLowerCase().includes(indicator)
+    );
+    
+    return langMatch && (isFemale || !isMale); // Include female OR exclude male
   });
 
   return (
