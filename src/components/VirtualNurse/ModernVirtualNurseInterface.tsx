@@ -22,6 +22,7 @@ import {
 import { MessageList } from '../VoiceChat/MessageList';
 import { VoiceWaves } from '../VoiceChat/VoiceWaves';
 import { InstallPrompt } from '../PWA/InstallPrompt';
+import { ProcessingIndicator } from '../VoiceChat/ProcessingIndicator';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
 import { VoiceSettingsPanel } from '../VoiceChat/VoiceSettingsPanel';
 import { VoiceTestPanel } from '../VoiceChat/VoiceTestPanel';
@@ -418,10 +419,23 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                     </div>
                   </div>
                 ) : (
-                  <MessageList 
-                    messages={messages} 
-                    onTranslate={() => {}} 
-                  />
+                  <>
+                    <MessageList 
+                      messages={messages} 
+                      onTranslate={() => {}} 
+                    />
+                    
+                    {/* Processing Indicator */}
+                    {state.isProcessing && state.processingStep && (
+                      <div className="mt-4">
+                        <ProcessingIndicator
+                          isVisible={state.isProcessing}
+                          currentStep={state.processingStep}
+                          language={state.currentLanguage}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

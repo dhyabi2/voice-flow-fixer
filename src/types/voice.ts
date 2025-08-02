@@ -5,6 +5,7 @@ export interface VoiceState {
   isProcessing: boolean;
   error: string | null;
   currentLanguage: 'en' | 'ar';
+  processingStep: 'analyzing' | 'searching' | 'processing' | 'generating' | null;
 }
 
 export interface VoiceMessage {

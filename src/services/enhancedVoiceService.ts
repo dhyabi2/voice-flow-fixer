@@ -1,7 +1,7 @@
 // Enhanced Voice Service with ElevenLabs support for better voice quality
 import { VoiceState, VoiceMessage } from '@/types/voice';
 import { debugLogger } from '@/utils/debugLogger';
-import { getOmanHealthcareContext } from './omanHealthcareService';
+import { intelligentResponseService } from './intelligentResponseService';
 import { memoryService } from './memoryService';
 
 // Enhanced voice configuration
@@ -41,7 +41,8 @@ export class EnhancedVoiceService {
     isSpeaking: false,
     isProcessing: false,
     error: null,
-    currentLanguage: 'ar' // Default to Arabic
+    currentLanguage: 'ar', // Default to Arabic
+    processingStep: null
   };
 
   private userInfo: { name?: string; gender?: 'male' | 'female' } = {};
@@ -634,52 +635,30 @@ export class EnhancedVoiceService {
     });
   }
 
-  // Process user message with enhanced healthcare awareness
+  // Process user message with intelligent routing and progress tracking
   private async processUserMessage(text: string): Promise<void> {
     try {
-      this.updateState({ isProcessing: true });
+      this.updateState({ isProcessing: true, processingStep: 'analyzing' });
       
-      // Import nurse service for healthcare-focused AI
+      // Use intelligent response service with progress tracking
+      const response = await intelligentResponseService.processQuestion(
+        text,
+        this.currentState.currentLanguage,
+        this.userInfo,
+        (step) => {
+          this.updateState({ processingStep: step.step });
+        }
+      );
+      
+      // Import nurse service for logging
       const { nurseService } = await import('./nurseService');
       
-      // Enhanced medical processing
-      const symptoms = nurseService.extractSymptoms(text);
-      const urgencyLevel = nurseService.assessUrgencyLevel(text);
-      
-      let medicalKnowledge = [];
-      if (symptoms.length > 0) {
-        medicalKnowledge = await nurseService.searchMedicalKnowledge(symptoms);
-      }
-
-      // Get real-time Oman healthcare information if medical query detected
-      let healthcareInfo = '';
-      const medicalKeywords = [
-        'مستشفى', 'طبيب', 'دكتور', 'علاج', 'دواء', 'مركز', 'صحة', 'عيادة', 'طوارئ',
-        'hospital', 'doctor', 'medicine', 'treatment', 'health', 'clinic', 'emergency'
-      ];
-      
-      const isHealthcareQuery = medicalKeywords.some(keyword => 
-        text.toLowerCase().includes(keyword.toLowerCase())
-      );
-
-      if (isHealthcareQuery) {
-        try {
-          healthcareInfo = await getOmanHealthcareContext();
-        } catch (error) {
-          debugLogger.warn('ENHANCED_VOICE', 'Failed to get healthcare info', { error });
-        }
-      }
-      
-      const nursePrompt = nurseService.generateNursePrompt(text, undefined, medicalKnowledge);
-      
-      // Enhanced AI call with healthcare context
-      const response = await this.callEnhancedAI(nursePrompt, healthcareInfo);
-      
+      // Log interaction for analytics
       await nurseService.logInteraction({
         interaction_type: 'voice_chat',
         transcript: text,
         summary: response.substring(0, 200),
-        urgency_level: urgencyLevel
+        urgency_level: 'low' // Default, can be enhanced later
       });
       
       const assistantMessage: VoiceMessage = {
@@ -692,13 +671,14 @@ export class EnhancedVoiceService {
       
       this.messageListeners.forEach(listener => listener(assistantMessage));
       await this.speakTextEnhanced(response);
-      this.updateState({ isProcessing: false });
+      this.updateState({ isProcessing: false, processingStep: null });
 
     } catch (error) {
       debugLogger.error('ENHANCED_VOICE', 'Failed to process user message', { error });
       this.updateState({ 
         error: 'Failed to process your message. Please try again.',
-        isProcessing: false 
+        isProcessing: false,
+        processingStep: null
       });
     }
   }

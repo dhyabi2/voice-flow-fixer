@@ -33,7 +33,8 @@ export class OpenRouterVoiceService {
     isSpeaking: false,
     isProcessing: false,
     error: null,
-    currentLanguage: 'ar' // Default to Arabic
+    currentLanguage: 'ar', // Default to Arabic
+    processingStep: null
   };
 
   constructor() {

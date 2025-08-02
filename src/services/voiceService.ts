@@ -52,7 +52,8 @@ export class VoiceService {
     isSpeaking: false,
     isProcessing: false,
     error: null,
-    currentLanguage: 'ar'
+    currentLanguage: 'ar',
+    processingStep: null
   };
 
   constructor() {
