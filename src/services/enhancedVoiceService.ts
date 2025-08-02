@@ -637,7 +637,7 @@ export class EnhancedVoiceService {
     // Use Meta Llama 3.1 70B - Superior open-source model for medical reasoning
     const openRouterConfig = {
       apiKey: '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',
-      model: 'meta-llama/llama-3.1-70b-instruct', // Upgraded from 8B to 70B for better medical reasoning
+      model: 'openai/gpt-4.1-nano', // Upgraded from 8B to 70B for better medical reasoning
       baseUrl: 'https://openrouter.ai/api/v1'
     };
 
