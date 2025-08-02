@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { MessageList } from '../VoiceChat/MessageList';
 import { VoiceWaves } from '../VoiceChat/VoiceWaves';
+import { InstallPrompt } from '../PWA/InstallPrompt';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
 import { VoiceSettingsPanel } from '../VoiceChat/VoiceSettingsPanel';
 import { VoiceTestPanel } from '../VoiceChat/VoiceTestPanel';
@@ -505,6 +506,9 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
           )}
         </div>
       </div>
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt language={state.currentLanguage} />
     </div>
   );
 }
