@@ -37,7 +37,7 @@ export function VoiceButton({
     if (isProcessing) return 'Processing...';
     if (isRecording) return 'Stop Recording';
     if (!isConnected) return 'Connect to Voice Chat';
-    return 'Start Recording';
+    return 'Start Recording (Interrupts AI if speaking)';
   };
 
   return (

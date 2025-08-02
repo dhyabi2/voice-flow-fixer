@@ -64,6 +64,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   const [userName, setUserName] = useState<string>('');
   const [userGender, setUserGender] = useState<'male' | 'female' | null>(null);
   const [showNameInput, setShowNameInput] = useState(true);
+  const [audioInterrupted, setAudioInterrupted] = useState(false); // Track audio interruption for visual feedback
   const [voiceSettings, setVoiceSettings] = useState({
     language: state.currentLanguage,
     voiceType: 'premium' as 'natural' | 'enhanced' | 'premium', // Default to ElevenLabs
@@ -147,6 +148,18 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
     if (state.isRecording) {
       stopRecording();
     } else {
+      // Show immediate feedback that AI audio is being interrupted
+      if (state.isSpeaking) {
+        setAudioInterrupted(true);
+        // Clear the animation after it completes
+        setTimeout(() => setAudioInterrupted(false), 300);
+        
+        toast.info(
+          state.currentLanguage === 'ar' 
+            ? '🔇 توقفت عن الكلام - تفضل اتكلم'
+            : '🔇 I stopped talking - go ahead'
+        );
+      }
       startRecording();
     }
   };
@@ -435,6 +448,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                     disabled={!canRecord}
                     className={cn(
                       "w-full h-20 rounded-2xl transition-all duration-500 transform border-4 text-xl font-bold shadow-2xl",
+                      audioInterrupted && "audio-interrupted", // Add shake animation when audio is interrupted
                       state.isRecording 
                         ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 scale-[1.02] border-white pulse-glow text-white" 
                         : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 border-purple-300 hover:scale-[1.02] gradient-animation text-white"

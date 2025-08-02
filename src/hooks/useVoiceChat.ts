@@ -188,6 +188,11 @@ export function useVoiceChat() {
     conversationLogger.setPatientContext(patient);
   }, []);
 
+  // Interrupt AI audio (for manual use)
+  const interruptAudio = useCallback(() => {
+    voiceService.interruptAudio();
+  }, []);
+
   // Toggle recording (convenience method)
   const toggleRecording = useCallback(() => {
     if (state.isRecording) {
@@ -243,6 +248,7 @@ export function useVoiceChat() {
     setElevenLabsApiKey,
     setUserInfo,
     setPatientContext,
+    interruptAudio,
     
     // Computed values
     canRecord: isInitialized && state.isConnected,

@@ -29,6 +29,8 @@ export class EnhancedVoiceService {
   private synthesis: SpeechSynthesis;
   private config: EnhancedVoiceConfig;
   private audioContext: AudioContext | null = null;
+  private currentAudio: HTMLAudioElement | null = null; // Track current audio for interruption
+  private currentUtterance: SpeechSynthesisUtterance | null = null; // Track TTS for interruption
   
   private stateListeners: Set<(state: VoiceState) => void> = new Set();
   private messageListeners: Set<(message: VoiceMessage) => void> = new Set();
@@ -240,6 +242,9 @@ export class EnhancedVoiceService {
         return;
       }
 
+      // 🔇 CRITICAL: Stop AI audio when user wants to speak
+      this.interruptAudio();
+
       debugLogger.info('ENHANCED_VOICE', 'Starting speech recognition');
       this.recognition.start();
 
@@ -295,6 +300,13 @@ export class EnhancedVoiceService {
 
     if (this.synthesis.speaking) {
       this.synthesis.cancel();
+      this.currentUtterance = null;
+    }
+
+    // Clear any current audio references
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio = null;
     }
 
     this.updateState({
@@ -306,6 +318,38 @@ export class EnhancedVoiceService {
     });
     
     debugLogger.info('ENHANCED_VOICE', 'Disconnected successfully');
+  }
+
+  // 🔇 Interrupt current AI audio when user wants to speak
+  public interruptAudio(): void {
+    debugLogger.info('ENHANCED_VOICE', 'Interrupting AI audio for user speech');
+    
+    let wasInterrupted = false;
+    
+    // Stop ElevenLabs audio
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+      this.currentAudio = null;
+      wasInterrupted = true;
+      debugLogger.info('ENHANCED_VOICE', 'ElevenLabs audio interrupted');
+    }
+    
+    // Stop browser TTS
+    if (this.synthesis.speaking) {
+      this.synthesis.cancel();
+      this.currentUtterance = null;
+      wasInterrupted = true;
+      debugLogger.info('ENHANCED_VOICE', 'Browser TTS interrupted');
+    }
+    
+    // Update state to reflect audio stopped
+    if (this.currentState.isSpeaking || wasInterrupted) {
+      this.updateState({ isSpeaking: false });
+      debugLogger.info('ENHANCED_VOICE', 'Audio interruption complete - ready for user input');
+    }
+    
+    return; // Ensure method completes cleanly
   }
 
   // Enhanced text-to-speech with ElevenLabs fallback
@@ -388,16 +432,32 @@ export class EnhancedVoiceService {
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       
+      // Track current audio for interruption capability
+      this.currentAudio = audio;
+      
       return new Promise((resolve) => {
         audio.onended = () => {
           URL.revokeObjectURL(audioUrl);
+          this.currentAudio = null; // Clear reference when done
           resolve(true);
         };
         audio.onerror = () => {
           URL.revokeObjectURL(audioUrl);
+          this.currentAudio = null; // Clear reference on error
           resolve(false);
         };
-        audio.play();
+        
+        // Check if audio was interrupted before playing
+        if (this.currentAudio === audio) {
+          audio.play().catch(() => {
+            this.currentAudio = null;
+            resolve(false);
+          });
+        } else {
+          // Audio was interrupted before we could play
+          URL.revokeObjectURL(audioUrl);
+          resolve(false);
+        }
       });
       
     } catch (error) {
@@ -409,11 +469,13 @@ export class EnhancedVoiceService {
   private async speakWithBrowserTTS(text: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        // Stop any existing audio first
         if (this.synthesis.speaking) {
           this.synthesis.cancel();
         }
 
         const utterance = new SpeechSynthesisUtterance(text);
+        this.currentUtterance = utterance; // Track for interruption
         const voices = this.synthesis.getVoices();
         
         // Enhanced voice selection - prioritize female voices and EXCLUDE male voices
@@ -547,15 +609,23 @@ export class EnhancedVoiceService {
 
         utterance.onend = () => {
           debugLogger.info('ENHANCED_VOICE', 'Browser TTS ended');
+          this.currentUtterance = null; // Clear reference when done
           resolve();
         };
 
         utterance.onerror = (event) => {
           debugLogger.error('ENHANCED_VOICE', 'Browser TTS error', { error: event.error });
+          this.currentUtterance = null; // Clear reference on error
           reject(new Error(`Browser TTS failed: ${event.error}`));
         };
 
-        this.synthesis.speak(utterance);
+        // Only speak if not interrupted
+        if (this.currentUtterance === utterance) {
+          this.synthesis.speak(utterance);
+        } else {
+          // Was interrupted before we could speak
+          resolve();
+        }
 
       } catch (error) {
         debugLogger.error('ENHANCED_VOICE', 'Failed to speak with browser TTS', { error });
