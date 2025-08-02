@@ -20,7 +20,9 @@ import {
   Volume2,
   User,
   ArrowRight,
-  Activity
+  Activity,
+  Square,
+  Trash2
 } from 'lucide-react';
 import { PatientLookup } from './PatientLookup';
 import { MessageList } from '../VoiceChat/MessageList';
@@ -410,60 +412,78 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                   )}
                 </div>
 
-                {/* Voice Controls Bar with Gen Z style */}
+                {/* Voice Controls Bar with Gen Z style - Each button on its own row */}
                 <div className="p-6 bg-gradient-to-r from-purple-50/80 via-pink-50/80 to-cyan-50/80 dark:from-gray-800/80 dark:via-purple-900/20 dark:to-pink-900/20 border-t border-purple-200/50 backdrop-blur-sm">
-                  <div className="flex items-center justify-center gap-4">
-                    {!state.isConnected ? (
+                  {!state.isConnected ? (
+                    <div className="w-full">
                       <Button 
                         onClick={handleConnect} 
-                        className="btn-neon px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl transform hover:scale-105 transition-all duration-300"
+                        className="w-full h-16 btn-neon px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl transform hover:scale-105 transition-all duration-300"
                       >
                         <Phone className="h-6 w-6 mr-3" />
                         {state.currentLanguage === 'ar' ? '🚀 يلا نبدأ!' : '🚀 Let\'s Go!'}
                       </Button>
-                    ) : (
-                      <>
-                        {/* Main Voice Button with extreme Gen Z styling */}
+                    </div>
+                  ) : (
+                    <div className="space-y-4 w-full">
+                      {/* Main Voice Button - Full Width Row */}
+                      <div className="w-full">
                         <Button
                           onClick={toggleRecording}
                           disabled={!canRecord}
                           className={cn(
-                            "w-20 h-20 rounded-full p-0 transition-all duration-500 transform border-4",
+                            "w-full h-20 rounded-2xl transition-all duration-500 transform border-4 text-xl font-bold",
                             state.isRecording 
-                              ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 scale-110 shadow-2xl border-white pulse-glow" 
-                              : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 shadow-xl border-purple-300 hover:scale-105 gradient-animation"
+                              ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 scale-105 shadow-2xl border-white pulse-glow text-white" 
+                              : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 shadow-xl border-purple-300 hover:scale-105 gradient-animation text-white"
                           )}
                         >
-                          {state.isRecording ? (
-                            <MicOff className="h-8 w-8 text-white animate-pulse" />
-                          ) : (
-                            <Mic className="h-8 w-8 text-white" />
-                          )}
+                          <div className="flex items-center justify-center gap-4">
+                            {state.isRecording ? (
+                              <>
+                                <Square className="h-8 w-8 animate-pulse" />
+                                <span>{state.currentLanguage === 'ar' ? '🛑 توقف عن التسجيل' : '🛑 Stop Recording'}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Mic className="h-8 w-8" />
+                                <span>{state.currentLanguage === 'ar' ? '🎤 ابدأ التحدث' : '🎤 Start Speaking'}</span>
+                              </>
+                            )}
+                          </div>
                         </Button>
+                      </div>
 
-                        {/* Secondary Actions with Gen Z style */}
-                        <div className="flex gap-3">
-                          <Button
-                            onClick={handleDisconnect}
-                            variant="outline"
-                            className="h-12 px-6 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold"
-                          >
-                            <PhoneOff className="h-5 w-5 mr-2" />
-                            {state.currentLanguage === 'ar' ? '👋 باي' : '👋 Peace'}
-                          </Button>
-                          
-                          <Button
-                            onClick={clearMessages}
-                            variant="outline"
-                            disabled={messages.length === 0}
-                            className="h-12 px-6 rounded-xl border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 font-bold"
-                          >
-                            {state.currentLanguage === 'ar' ? '🗑️ امسح' : '🗑️ Clear'}
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      {/* Disconnect Button - Full Width Row */}
+                      <div className="w-full">
+                        <Button
+                          onClick={handleDisconnect}
+                          variant="outline"
+                          className="w-full h-16 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold text-lg"
+                        >
+                          <div className="flex items-center justify-center gap-3">
+                            <PhoneOff className="h-6 w-6" />
+                            <span>{state.currentLanguage === 'ar' ? '👋 انهاء المحادثة' : '👋 End Conversation'}</span>
+                          </div>
+                        </Button>
+                      </div>
+                      
+                      {/* Clear Messages Button - Full Width Row */}
+                      <div className="w-full">
+                        <Button
+                          onClick={clearMessages}
+                          variant="outline"
+                          disabled={messages.length === 0}
+                          className="w-full h-16 rounded-xl border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div className="flex items-center justify-center gap-3">
+                            <Trash2 className="h-6 w-6" />
+                            <span>{state.currentLanguage === 'ar' ? '🗑️ مسح المحادثة' : '🗑️ Clear Conversation'}</span>
+                          </div>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {state.error && (
                     <div className="mt-4 p-4 bg-gradient-to-r from-red-100 to-pink-100 border-2 border-red-300 rounded-2xl">
