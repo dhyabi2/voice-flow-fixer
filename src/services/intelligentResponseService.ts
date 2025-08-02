@@ -132,6 +132,8 @@ class IntelligentResponseService {
 
   private async getPerplexityContext(text: string, language: 'ar' | 'en'): Promise<string> {
     try {
+      console.log('Calling Perplexity with query:', text);
+      
       const { data, error } = await supabase.functions.invoke('perplexity-healthcare-search', {
         body: {
           query: text,
@@ -145,12 +147,15 @@ class IntelligentResponseService {
 
       if (error) {
         console.error('Perplexity search error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         return '';
       }
 
+      console.log('Perplexity response received:', data?.response ? 'Success' : 'No response');
       return data?.response || '';
     } catch (error) {
       console.error('Failed to call Perplexity function:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       return '';
     }
   }
