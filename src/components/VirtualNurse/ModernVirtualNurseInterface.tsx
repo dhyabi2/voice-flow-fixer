@@ -216,7 +216,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
       </div>
 
       {/* Modern Header with Gen Z vibes */}
-      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-purple-200/50 dark:border-purple-700/50 sticky top-0 z-40">
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-purple-200/50 dark:border-purple-700/50 fixed top-0 left-0 right-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -299,32 +299,6 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
               >
                 {state.currentLanguage === 'ar' ? 'تغيير الاسم' : 'Change Name'}
               </Button>
-              
-              {/* Settings */}
-              <Sheet open={showSettings} onOpenChange={setShowSettings}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-96">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <Settings className="h-5 w-5" />
-                      {t('Voice Settings')}
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6 space-y-6">
-                    <VoiceSettingsPanel 
-                      settings={voiceSettings}
-                      onSettingsChange={setVoiceSettings}
-                      currentLanguage={state.currentLanguage}
-                      onElevenLabsApiKeyChange={setElevenLabsApiKey}
-                    />
-                    <VoiceTestPanel currentLanguage={state.currentLanguage} />
-                  </div>
-                </SheetContent>
-              </Sheet>
             </div>
           </div>
         </div>
@@ -379,7 +353,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
       </Dialog>
 
       {/* Main Conversation Area - Full Width with Mobile Optimized Scrolling */}
-      <div className="max-w-6xl mx-auto px-4 py-6 pb-36">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-36 pt-24">
         <Card className="h-[calc(100vh-140px)] flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 shadow-2xl overflow-hidden">
           <CardContent className="flex-1 flex flex-col p-0">
             {/* Messages Area with Mobile-Optimized Scrolling */}
