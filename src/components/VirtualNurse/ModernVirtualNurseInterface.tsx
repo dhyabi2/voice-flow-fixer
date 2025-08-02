@@ -1,36 +1,29 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
   Heart, 
   Settings, 
   Mic, 
-  MicOff, 
-  Users, 
   MessageCircle,
   Phone,
   PhoneOff,
-  TestTube,
   Languages,
   Volume2,
-  User,
-  ArrowRight,
   Activity,
   Square,
-  Trash2
+  Trash2,
+  LogOut
 } from 'lucide-react';
-import { PatientLookup } from './PatientLookup';
 import { MessageList } from '../VoiceChat/MessageList';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
 import { VoiceSettingsPanel } from '../VoiceChat/VoiceSettingsPanel';
 import { VoiceTestPanel } from '../VoiceChat/VoiceTestPanel';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
-import { nurseService, type Patient } from '@/services/nurseService';
 import { useTranslation } from '@/utils/translations';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -57,24 +50,32 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   } = useVoiceChat();
 
   const { t, isRTL } = useTranslation(state.currentLanguage);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showPatients, setShowPatients] = useState(false);
   const [userName, setUserName] = useState<string>('');
   const [userGender, setUserGender] = useState<'male' | 'female' | null>(null);
   const [showNameInput, setShowNameInput] = useState(true);
-  const [audioInterrupted, setAudioInterrupted] = useState(false); // Track audio interruption for visual feedback
+  const [showSettings, setShowSettings] = useState(false);
+  const [audioInterrupted, setAudioInterrupted] = useState(false);
   const [voiceSettings, setVoiceSettings] = useState({
     language: state.currentLanguage,
-    voiceType: 'premium' as 'natural' | 'enhanced' | 'premium', // Default to ElevenLabs
+    voiceType: 'premium' as 'natural' | 'enhanced' | 'premium',
     rate: 0.85,
     pitch: 1.1
   });
 
+  // Load saved user info on component mount
   useEffect(() => {
-    loadRecentPatients();
-  }, []);
+    const savedName = localStorage.getItem('nurse-amira-user-name');
+    const savedGender = localStorage.getItem('nurse-amira-user-gender') as 'male' | 'female' | null;
+    
+    if (savedName && savedGender) {
+      setUserName(savedName);
+      setUserGender(savedGender);
+      setShowNameInput(false);
+      
+      // Set user info for voice services immediately
+      setUserInfo(savedName, savedGender);
+    }
+  }, [setUserInfo]);
 
   const detectGender = (name: string): 'male' | 'female' => {
     const maleNames = ['محمد', 'أحمد', 'علي', 'حسن', 'حسين', 'عبدالله', 'عبدالرحمن', 'خالد', 'سعد', 'فهد', 'مشعل', 'طلال', 'نايف', 'بندر', 'سلطان', 'راشد', 'منصور', 'عبدالعزيز', 'يوسف', 'إبراهيم', 'عمر', 'زايد', 'حمد', 'سالم', 'عيسى', 'موسى', 'داود', 'سليمان', 'يعقوب'];
@@ -102,20 +103,19 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
       const detectedGender = detectGender(userName);
       setUserGender(detectedGender);
       setShowNameInput(false);
+      
+      // Save to localStorage for future sessions
+      localStorage.setItem('nurse-amira-user-name', userName.trim());
+      localStorage.setItem('nurse-amira-user-gender', detectedGender);
+      
+      // Set user info for voice services
+      setUserInfo(userName.trim(), detectedGender);
+      
       toast.success(
         state.currentLanguage === 'ar' 
-          ? `أهلاً وسهلاً ${userName}! 🎉`
-          : `Welcome ${userName}! 🎉`
+          ? `أهلاً وسهلاً ${userName}! 🎉 اسمك محفوظ للمرات القادمة`
+          : `Welcome ${userName}! 🎉 Your name is saved for next time`
       );
-    }
-  };
-
-  const loadRecentPatients = async () => {
-    try {
-      const patients = await nurseService.getPatients();
-      setRecentPatients(patients.slice(0, 3));
-    } catch (error) {
-      console.error('Error loading patients:', error);
     }
   };
 
@@ -123,7 +123,6 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
     try {
       await connect();
       if (userName && userGender) {
-        // Set user info for all services
         setUserInfo(userName, userGender);
       }
       toast.success(t('Connected to Nurse Amira'));
@@ -135,13 +134,6 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   const handleDisconnect = () => {
     disconnect();
     toast.info(t('Disconnected from voice service'));
-  };
-
-  const handlePatientSelect = (patient: Patient) => {
-    setSelectedPatient(patient);
-    setPatientContext(patient);
-    setShowPatients(false);
-    toast.success(`${t('Selected patient:')} ${patient.name}`);
   };
 
   const toggleRecording = () => {
@@ -280,6 +272,20 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                 onLanguageChange={switchLanguage}
               />
 
+              {/* Change Name Button */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem('nurse-amira-user-name');
+                  localStorage.removeItem('nurse-amira-user-gender');
+                  setShowNameInput(true);
+                }}
+                className="text-xs"
+              >
+                {state.currentLanguage === 'ar' ? 'تغيير الاسم' : 'Change Name'}
+              </Button>
+              
               {/* Settings */}
               <Sheet open={showSettings} onOpenChange={setShowSettings}>
                 <SheetTrigger asChild>
@@ -338,6 +344,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                 placeholder={state.currentLanguage === 'ar' ? 'ادخل اسمك...' : 'Enter your name...'}
                 className="text-center"
                 onKeyPress={(e) => e.key === 'Enter' && handleNameSubmit()}
+                autoFocus
               />
             </div>
             <Button 
@@ -347,260 +354,143 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
             >
               {state.currentLanguage === 'ar' ? '✨ يلا نبدأ!' : '✨ Let\'s Start!'}
             </Button>
+            <p className="text-xs text-gray-500 text-center">
+              {state.currentLanguage === 'ar' 
+                ? 'اسمك راح يتحفظ للمرات القادمة'
+                : 'Your name will be saved for future sessions'
+              }
+            </p>
           </div>
         </DialogContent>
       </Dialog>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Conversation Area with Gen Z styling */}
-          <div className="lg:col-span-2">
-            <Card className="h-[calc(100vh-200px)] flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 shadow-2xl overflow-hidden">
-              <CardContent className="flex-1 flex flex-col p-0">
-                {/* Patient Context Bar */}
-                {selectedPatient && (
-                  <div className="p-4 bg-blue-50 border-b border-blue-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-blue-900">{selectedPatient.name}</p>
-                          <p className="text-sm text-blue-600">{selectedPatient.patient_id}</p>
-                        </div>
+      {/* Main Conversation Area - Full Width with Mobile Optimized Scrolling */}
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-36">
+        <Card className="h-[calc(100vh-140px)] flex flex-col bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 shadow-2xl overflow-hidden">
+          <CardContent className="flex-1 flex flex-col p-0">
+            {/* Messages Area with Mobile-Optimized Scrolling */}
+            <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="p-6">
+                {messages.length === 0 ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center max-w-md">
+                      <div className="w-24 h-24 bg-gradient-to-br from-purple-400 via-pink-400 to-cyan-400 rounded-3xl flex items-center justify-center mx-auto mb-6 float-animation">
+                        <MessageCircle className="h-12 w-12 text-white" />
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setSelectedPatient(null)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        Clear
-                      </Button>
+                      <h3 className="text-2xl font-bold text-gradient mb-3">
+                        {state.currentLanguage === 'ar' 
+                          ? (userName ? `هلا والله ${userName}! 🤗 أنا أميرة` : "هلا والله! 🤗 أنا أميرة") 
+                          : (userName ? `Hey there ${userName}! 🤗 I'm Amira` : "Hey there! 🤗 I'm Amira")
+                        }
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed mb-6 font-medium">
+                        {state.currentLanguage === 'ar' 
+                          ? (userGender === 'female' 
+                              ? "شحالِش عزيزتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
+                              : "شحالَك عزيزي؟ 💕 أنا هني أساعدك في أي شي يخص صحتك. كلمني عادي مثل أخوك! 🗣️✨"
+                            )
+                          : "What's good bestie? 💕 I'm here to help with all your health stuff. Just talk to me like your best friend! 🗣️✨"
+                        }
+                      </p>
+                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-sm font-bold shadow-lg">
+                        <Heart className="h-5 w-5" />
+                        {state.currentLanguage === 'ar' 
+                          ? (userGender === 'female' 
+                              ? "دايماً استشيري الدكتور للقرارات المهمة 👩‍⚕️"
+                              : "دايماً استشر الدكتور للقرارات المهمة 👨‍⚕️"
+                            )
+                          : "Always check with your doc for the big stuff 👩‍⚕️"
+                        }
+                      </div>
                     </div>
                   </div>
+                ) : (
+                  <MessageList 
+                    messages={messages} 
+                    onTranslate={() => {}} 
+                  />
                 )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-                {/* Messages Area */}
-                <div className="flex-1 p-6 overflow-hidden">
-                  {messages.length === 0 ? (
-                    <div className="h-full flex items-center justify-center">
-                      <div className="text-center max-w-md">
-                        <div className="w-24 h-24 bg-gradient-to-br from-purple-400 via-pink-400 to-cyan-400 rounded-3xl flex items-center justify-center mx-auto mb-6 float-animation">
-                          <MessageCircle className="h-12 w-12 text-white" />
-                        </div>
-                        <h3 className="text-2xl font-bold text-gradient mb-3">
-                          {state.currentLanguage === 'ar' 
-                            ? (userName ? `هلا والله ${userName}! 🤗 أنا أميرة` : "هلا والله! 🤗 أنا أميرة") 
-                            : (userName ? `Hey there ${userName}! 🤗 I'm Amira` : "Hey there! 🤗 I'm Amira")
-                          }
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed mb-6 font-medium">
-                          {state.currentLanguage === 'ar' 
-                            ? (userGender === 'female' 
-                                ? "شحالِش عزيزتي؟ 💕 أنا هني أساعدج في أي شي يخص صحتج. كلميني عادي مثل أختج! 🗣️✨"
-                                : "شحالَك عزيزي؟ 💕 أنا هني أساعدك في أي شي يخص صحتك. كلمني عادي مثل أخوك! 🗣️✨"
-                              )
-                            : "What's good bestie? 💕 I'm here to help with all your health stuff. Just talk to me like your best friend! 🗣️✨"
-                          }
-                        </p>
-                        <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-full text-sm font-bold shadow-lg">
-                          <Heart className="h-5 w-5" />
-                          {state.currentLanguage === 'ar' 
-                            ? (userGender === 'female' 
-                                ? "دايماً استشيري الدكتور للقرارات المهمة 👩‍⚕️" 
-                                : "دايماً استشر الدكتور للقرارات المهمة 👨‍⚕️"
-                              )
-                            : "Always check with your doc for the big stuff 👩‍⚕️"
-                          }
-                        </div>
-                      </div>
-                    </div>
+      {/* Fixed floating control buttons with enhanced UX */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-purple-200/50 dark:border-purple-700/50 p-4 z-50 shadow-2xl">
+        <div className="max-w-6xl mx-auto">
+          {!state.isConnected ? (
+            <Button 
+              onClick={handleConnect} 
+              className="w-full h-16 btn-neon px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+            >
+              <Phone className="h-6 w-6 mr-3" />
+              {state.currentLanguage === 'ar' ? '🚀 يلا نبدأ!' : '🚀 Let\'s Go!'}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              {/* Main Voice Button - Full Width */}
+              <Button
+                onClick={toggleRecording}
+                disabled={!canRecord}
+                className={cn(
+                  "w-full h-20 rounded-2xl transition-all duration-500 transform border-4 text-xl font-bold shadow-2xl",
+                  audioInterrupted && "audio-interrupted", // Add shake animation when audio is interrupted
+                  state.isRecording 
+                    ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 scale-[1.02] border-white pulse-glow text-white" 
+                    : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 border-purple-300 hover:scale-[1.02] gradient-animation text-white"
+                )}
+              >
+                <div className="flex items-center justify-center gap-4">
+                  {state.isRecording ? (
+                    <>
+                      <Square className="h-8 w-8 animate-pulse" />
+                      <span>{state.currentLanguage === 'ar' ? '🛑 توقف عن التسجيل' : '🛑 Stop Recording'}</span>
+                    </>
                   ) : (
-                    <MessageList 
-                      messages={messages} 
-                      onTranslate={() => {}} 
-                    />
+                    <>
+                      <Mic className="h-8 w-8" />
+                      <span>{state.currentLanguage === 'ar' ? '🎤 ابدأ التحدث' : '🎤 Start Speaking'}</span>
+                    </>
                   )}
                 </div>
+              </Button>
 
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Fixed floating control buttons with enhanced UX */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-t border-purple-200/50 dark:border-purple-700/50 p-4 z-50 shadow-2xl">
-            <div className="max-w-6xl mx-auto">
-              {!state.isConnected ? (
-                <Button 
-                  onClick={handleConnect} 
-                  className="w-full h-16 btn-neon px-8 py-4 rounded-2xl text-lg font-bold shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              {/* Secondary Controls in a Row */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleDisconnect}
+                  variant="outline"
+                  className="flex-1 h-14 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                 >
-                  <Phone className="h-6 w-6 mr-3" />
-                  {state.currentLanguage === 'ar' ? '🚀 يلا نبدأ!' : '🚀 Let\'s Go!'}
-                </Button>
-              ) : (
-                <div className="space-y-3">
-                  {/* Main Voice Button - Full Width */}
-                  <Button
-                    onClick={toggleRecording}
-                    disabled={!canRecord}
-                    className={cn(
-                      "w-full h-20 rounded-2xl transition-all duration-500 transform border-4 text-xl font-bold shadow-2xl",
-                      audioInterrupted && "audio-interrupted", // Add shake animation when audio is interrupted
-                      state.isRecording 
-                        ? "bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 scale-[1.02] border-white pulse-glow text-white" 
-                        : "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-600 hover:via-pink-600 hover:to-cyan-600 border-purple-300 hover:scale-[1.02] gradient-animation text-white"
-                    )}
-                  >
-                    <div className="flex items-center justify-center gap-4">
-                      {state.isRecording ? (
-                        <>
-                          <Square className="h-8 w-8 animate-pulse" />
-                          <span>{state.currentLanguage === 'ar' ? '🛑 توقف عن التسجيل' : '🛑 Stop Recording'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="h-8 w-8" />
-                          <span>{state.currentLanguage === 'ar' ? '🎤 ابدأ التحدث' : '🎤 Start Speaking'}</span>
-                        </>
-                      )}
-                    </div>
-                  </Button>
-
-                  {/* Secondary Controls in a Row */}
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={handleDisconnect}
-                      variant="outline"
-                      className="flex-1 h-14 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-bold text-base shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <PhoneOff className="h-5 w-5" />
-                        <span className="hidden sm:inline">{state.currentLanguage === 'ar' ? '👋 انهاء المحادثة' : '👋 End Session'}</span>
-                        <span className="sm:hidden">{state.currentLanguage === 'ar' ? 'انهاء' : 'End'}</span>
-                      </div>
-                    </Button>
-                    
-                    <Button
-                      onClick={clearMessages}
-                      variant="outline"
-                      disabled={messages.length === 0}
-                      className="flex-1 h-14 rounded-xl border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <Trash2 className="h-5 w-5" />
-                        <span className="hidden sm:inline">{state.currentLanguage === 'ar' ? '🗑️ مسح المحادثة' : '🗑️ Clear Chat'}</span>
-                        <span className="sm:hidden">{state.currentLanguage === 'ar' ? 'مسح' : 'Clear'}</span>
-                      </div>
-                    </Button>
+                  <div className="flex items-center justify-center gap-2">
+                    <LogOut className="h-5 w-5" />
+                    <span className="hidden sm:inline">{state.currentLanguage === 'ar' ? '👋 انهاء المحادثة' : '👋 End Session'}</span>
+                    <span className="sm:hidden">{state.currentLanguage === 'ar' ? 'انهاء' : 'End'}</span>
                   </div>
-                </div>
-              )}
-
-              {state.error && (
-                <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 border-2 border-red-300 rounded-xl">
-                  <p className="text-red-700 text-sm text-center font-medium">⚠️ {state.error}</p>
-                </div>
-              )}
+                </Button>
+                
+                <Button
+                  onClick={clearMessages}
+                  variant="outline"
+                  disabled={messages.length === 0}
+                  className="flex-1 h-14 rounded-xl border-2 border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 font-bold text-base disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Trash2 className="h-5 w-5" />
+                    <span className="hidden sm:inline">{state.currentLanguage === 'ar' ? '🗑️ مسح المحادثة' : '🗑️ Clear Chat'}</span>
+                    <span className="sm:hidden">{state.currentLanguage === 'ar' ? 'مسح' : 'Clear'}</span>
+                  </div>
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Sidebar with Gen Z aesthetic */}
-          <div className="space-y-6">
-            {/* Quick Patient Access with modern styling */}
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-purple-200/50 dark:border-purple-700/50 shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-lg text-gradient flex items-center gap-2">
-                    <Users className="h-6 w-6 text-purple-500" />
-                    {state.currentLanguage === 'ar' ? '👥 المرضى' : '👥 Patients'}
-                  </h3>
-                  <Sheet open={showPatients} onOpenChange={setShowPatients}>
-                    <SheetTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="w-96">
-                      <SheetHeader>
-                        <SheetTitle className="flex items-center gap-2 text-xl font-bold text-gradient">
-                          <Users className="h-6 w-6" />
-                          {state.currentLanguage === 'ar' ? '📋 دليل المرضى' : '📋 Patient Directory'}
-                        </SheetTitle>
-                      </SheetHeader>
-                      <div className="mt-6">
-                        <PatientLookup
-                          onPatientSelect={handlePatientSelect}
-                          selectedPatient={selectedPatient}
-                        />
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                </div>
-
-                <div className="space-y-3">
-                  {recentPatients.map((patient) => (
-                    <div
-                      key={patient.id}
-                      className={cn(
-                        "p-3 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-blue-300 hover:bg-blue-50",
-                        selectedPatient?.id === patient.id && "border-blue-500 bg-blue-50"
-                      )}
-                      onClick={() => handlePatientSelect(patient)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <User className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-900 truncate">{patient.name}</p>
-                          <p className="text-xs text-gray-500">{patient.patient_id}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-4 h-12 rounded-xl border-2 border-purple-300 text-purple-700 hover:bg-purple-50 font-bold" 
-                  onClick={() => setShowPatients(true)}
-                >
-                  {state.currentLanguage === 'ar' ? '📋 شوف الكل' : '📋 See All'}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats with Gen Z vibes */}
-            <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-2 border-cyan-200/50 dark:border-cyan-700/50 shadow-xl">
-              <CardContent className="p-6">
-                <h3 className="font-bold text-lg text-gradient mb-4 flex items-center gap-2">
-                  <Activity className="h-6 w-6 text-cyan-500" />
-                  {state.currentLanguage === 'ar' ? '📊 إحصائيات الجلسة' : '📊 Session Stats'}
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-                    <span className="text-sm font-bold text-gray-700">{state.currentLanguage === 'ar' ? '💬 الرسائل' : '💬 Messages'}</span>
-                    <Badge variant="secondary" className="bg-purple-200 text-purple-800 font-bold">{messages.length}</Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl">
-                    <span className="text-sm font-bold text-gray-700">{state.currentLanguage === 'ar' ? '🌍 اللغة' : '🌍 Language'}</span>
-                    <Badge variant="outline" className="border-cyan-300 text-cyan-700 font-bold">
-                      {state.currentLanguage === 'ar' ? '🇴🇲 عربي' : '🇺🇸 English'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
-                    <span className="text-sm font-bold text-gray-700">{state.currentLanguage === 'ar' ? '👤 المريض' : '👤 Patient'}</span>
-                    <Badge variant={selectedPatient ? "default" : "secondary"} className={selectedPatient ? "bg-green-200 text-green-800 font-bold" : "bg-gray-200 text-gray-600 font-bold"}>
-                      {selectedPatient ? (state.currentLanguage === 'ar' ? '✅ محدد' : '✅ Selected') : (state.currentLanguage === 'ar' ? '❌ مو محدد' : '❌ None')}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {state.error && (
+            <div className="mt-3 p-3 bg-gradient-to-r from-red-100 to-pink-100 border-2 border-red-300 rounded-xl">
+              <p className="text-red-700 text-sm text-center font-medium">⚠️ {state.error}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
