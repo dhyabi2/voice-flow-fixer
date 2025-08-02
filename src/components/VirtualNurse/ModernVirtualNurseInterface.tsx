@@ -140,11 +140,20 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
   };
 
   const toggleRecording = () => {
+    console.log('🎤 Toggle recording called', { 
+      isRecording: state.isRecording, 
+      canRecord, 
+      isConnected: state.isConnected,
+      isProcessing: state.isProcessing 
+    });
+    
     if (state.isRecording) {
+      console.log('🛑 Stopping recording...');
       stopRecording();
     } else {
       // Show immediate feedback that AI audio is being interrupted
       if (state.isSpeaking) {
+        console.log('🔇 Interrupting AI audio...');
         setAudioInterrupted(true);
         // Clear the animation after it completes
         setTimeout(() => setAudioInterrupted(false), 300);
@@ -155,6 +164,7 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
             : '🔇 I stopped talking - go ahead'
         );
       }
+      console.log('🎙️ Starting recording...');
       startRecording();
     }
   };

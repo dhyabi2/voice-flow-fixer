@@ -113,10 +113,18 @@ export class EnhancedVoiceService {
       };
 
       this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+        console.log('🎤 Speech recognition result received:', event);
+        
         const result = event.results[event.resultIndex];
         if (result.isFinal && result[0].transcript.trim()) {
           const transcript = result[0].transcript.trim();
           const confidence = result[0].confidence;
+          
+          console.log('🗣️ Final transcript received:', { 
+            transcript, 
+            confidence,
+            language: this.currentState.currentLanguage 
+          });
           
           debugLogger.info('ENHANCED_VOICE', 'Speech recognized', { 
             transcript, 
@@ -132,7 +140,10 @@ export class EnhancedVoiceService {
             language: this.currentState.currentLanguage
           };
           
+          console.log('📨 Sending user message to listeners:', userMessage);
           this.messageListeners.forEach(listener => listener(userMessage));
+          
+          console.log('🔄 Starting message processing...');
           this.processUserMessage(transcript);
         }
       };
@@ -638,21 +649,27 @@ export class EnhancedVoiceService {
   // Process user message with intelligent routing and progress tracking
   private async processUserMessage(text: string): Promise<void> {
     try {
+      console.log('🔄 Starting processUserMessage with text:', text);
       this.updateState({ isProcessing: true, processingStep: 'analyzing' });
       
+      console.log('🤖 Calling intelligentResponseService.processQuestion...');
       // Use intelligent response service with progress tracking
       const response = await intelligentResponseService.processQuestion(
         text,
         this.currentState.currentLanguage,
         this.userInfo,
         (step) => {
+          console.log('📊 Processing step:', step);
           this.updateState({ processingStep: step.step });
         }
       );
       
+      console.log('✅ Received AI response:', response.substring(0, 100) + '...');
+      
       // Import nurse service for logging
       const { nurseService } = await import('./nurseService');
       
+      console.log('📝 Logging interaction...');
       // Log interaction for analytics
       await nurseService.logInteraction({
         interaction_type: 'voice_chat',
@@ -669,11 +686,23 @@ export class EnhancedVoiceService {
         language: this.currentState.currentLanguage
       };
       
+      console.log('📨 Sending assistant message to listeners:', {
+        id: assistantMessage.id,
+        type: assistantMessage.type,
+        contentLength: assistantMessage.content.length,
+        language: assistantMessage.language
+      });
+      
       this.messageListeners.forEach(listener => listener(assistantMessage));
+      
+      console.log('🔊 Starting text-to-speech...');
       await this.speakTextEnhanced(response);
+      
+      console.log('✅ Message processing completed successfully');
       this.updateState({ isProcessing: false, processingStep: null });
 
     } catch (error) {
+      console.error('❌ Failed to process user message:', error);
       debugLogger.error('ENHANCED_VOICE', 'Failed to process user message', { error });
       this.updateState({ 
         error: 'Failed to process your message. Please try again.',

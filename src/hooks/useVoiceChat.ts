@@ -21,7 +21,16 @@ export function useVoiceChat() {
   const messageUnsubscribeRef = useRef<(() => void) | null>(null);
 
   const addMessage = useCallback((message: VoiceMessage) => {
-    setMessages(prev => [...prev, message]);
+    console.log('📝 Adding new message:', { 
+      type: message.type, 
+      content: message.content.substring(0, 50) + '...', 
+      language: message.language 
+    });
+    setMessages(prev => {
+      const newMessages = [...prev, message];
+      console.log('📝 Total messages now:', newMessages.length);
+      return newMessages;
+    });
     
     // Add to memory service for context and logging
     memoryService.addMessage(message);
@@ -83,20 +92,30 @@ export function useVoiceChat() {
   // Start recording
   const startRecording = useCallback(async () => {
     try {
+      const canRecord = isInitialized && state.isConnected;
+      console.log('🎙️ Starting recording attempt...', { 
+        isConnected: state.isConnected, 
+        canRecord, 
+        isInitialized 
+      });
+      
       if (!state.isConnected) {
+        console.log('🔌 Not connected, connecting first...');
         await connect();
       }
       
+      console.log('🎙️ Calling voice service startRecording...');
       await voiceService.startRecording();
+      console.log('✅ Voice service startRecording completed');
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      console.error('❌ Failed to start recording:', error);
       toast({
         title: "Recording Failed",
         description: "Failed to start recording. Please try again.",
         variant: "destructive",
       });
     }
-  }, [state.isConnected, connect, toast]);
+  }, [state.isConnected, isInitialized, connect, toast]);
 
   // Stop recording
   const stopRecording = useCallback(() => {
