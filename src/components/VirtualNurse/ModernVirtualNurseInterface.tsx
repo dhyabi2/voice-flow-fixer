@@ -20,6 +20,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { MessageList } from '../VoiceChat/MessageList';
+import { VoiceWaves } from '../VoiceChat/VoiceWaves';
 import { LanguageToggle } from '../VoiceChat/LanguageToggle';
 import { VoiceSettingsPanel } from '../VoiceChat/VoiceSettingsPanel';
 import { VoiceTestPanel } from '../VoiceChat/VoiceTestPanel';
@@ -250,6 +251,17 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
                   "h-4 w-4",
                   statusInfo.pulse && "animate-pulse"
                 )} />
+                
+                {/* Voice Waves Animation when speaking */}
+                {state.isSpeaking && (
+                  <VoiceWaves 
+                    isActive={state.isSpeaking} 
+                    size="sm" 
+                    color="purple"
+                    className="ml-1"
+                  />
+                )}
+                
                 {state.currentLanguage === 'ar' ? 
                   (statusInfo.text === 'Ready' ? 'جاهزة! 💪' : 
                    statusInfo.text === 'Listening' ? (userGender === 'female' ? 'اسمعج 👂' : 'اسمعك 👂') : 

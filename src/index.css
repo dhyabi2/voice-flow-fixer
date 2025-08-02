@@ -496,6 +496,38 @@
   100% { transform: translateX(0); }
 }
 
+/* Voice wave animations for speech visualization */
+@keyframes voice-wave-bar {
+  0%, 100% { 
+    transform: scaleY(0.3);
+    opacity: 0.6;
+  }
+  50% { 
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes wave-pulse {
+  0%, 100% { 
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
 .audio-interrupted {
   animation: audio-interrupt 0.3s ease-in-out;
+}
+
+.voice-wave-bar {
+  animation: voice-wave-bar 1.5s ease-in-out infinite;
+}
+
+.wave-pulse {
+  animation: wave-pulse 2s ease-in-out infinite;
+}
 }
