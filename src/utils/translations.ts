@@ -60,7 +60,7 @@ export const translations = {
     'Switch to English': 'التبديل إلى الإنجليزية',
     
     // Toast Messages
-    'Connected to Nurse Amira': 'متصلة مع عميرة! 🚀',
+    'Connected to Nurse Amira': 'متصلة مع أميرة! 🚀',
     'Failed to connect to voice service': 'فشل في الاتصال بخدمة الصوت',
     'Disconnected from voice service': 'تم قطع الاتصال عن خدمة الصوت',
     'Selected patient:': 'تم اختيار المريض:',
