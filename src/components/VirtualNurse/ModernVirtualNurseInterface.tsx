@@ -47,7 +47,6 @@ export function ModernVirtualNurseInterface({ className }: ModernVirtualNurseInt
     switchLanguage,
     clearMessages,
     canRecord,
-    setElevenLabsApiKey,
     setUserInfo,
     setPatientContext
   } = useVoiceChat();

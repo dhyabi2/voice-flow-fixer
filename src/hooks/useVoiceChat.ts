@@ -188,15 +188,10 @@ export function useVoiceChat() {
     });
   }, [toast]);
 
-  // Set ElevenLabs API key
+  // Deprecated - API keys managed centrally
   const setElevenLabsApiKey = useCallback((apiKey: string) => {
-    voiceService.setElevenLabsApiKey(apiKey);
-    
-    toast({
-      title: "ElevenLabs API Key Set",
-      description: "Voice quality enhanced with ElevenLabs.",
-    });
-  }, [toast]);
+    console.warn('setElevenLabsApiKey is deprecated - API keys are managed in Supabase');
+  }, []);
 
   const setUserInfo = useCallback((name: string, gender: 'male' | 'female') => {
     voiceService.setUserInfo(name, gender);

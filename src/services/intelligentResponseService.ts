@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { apiKeyService } from './apiKeyService';
 
 interface ProcessingStep {
   step: 'analyzing' | 'searching' | 'processing' | 'generating';
@@ -246,14 +247,14 @@ SAFETY PROTOCOL:
 
 ${perplexityContext ? `\n**📊 Current Information:** ${perplexityContext}` : ''}`;
 
-    // Check if we have the OpenRouter API key configured
-    const storedApiKey = localStorage.getItem('openrouter_api_key');
-    if (!storedApiKey) {
-      throw new Error('OpenRouter API key not configured. Please set it in the settings.');
+    // Get OpenRouter API key from centralized service
+    const apiKey = await apiKeyService.getOpenRouterKey();
+    if (!apiKey) {
+      throw new Error('OpenRouter API key not configured in system.');
     }
 
     const openRouterConfig = {
-      apiKey: storedApiKey,
+      apiKey,
       model: 'openai/gpt-4o-mini',
       baseUrl: 'https://openrouter.ai/api/v1'
     };

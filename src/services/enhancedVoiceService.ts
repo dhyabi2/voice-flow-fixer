@@ -3,6 +3,7 @@ import { VoiceState, VoiceMessage } from '@/types/voice';
 import { debugLogger } from '@/utils/debugLogger';
 import { intelligentResponseService } from './intelligentResponseService';
 import { memoryService } from './memoryService';
+import { apiKeyService } from './apiKeyService';
 
 // Enhanced voice configuration
 interface EnhancedVoiceConfig {
@@ -49,7 +50,6 @@ export class EnhancedVoiceService {
 
   constructor() {
     this.config = {
-      elevenLabsApiKey: 'sk_dc0c45e8fa3c7c9d52db9617022ae16dabd2c7ebfa060958', // Default ElevenLabs API key
       voices: {
         ar: {
           elevenLabs: 'a1KZUXKFVFDOb33I1uqr', // Updated voice ID as requested
@@ -66,9 +66,6 @@ export class EnhancedVoiceService {
         volume: 0.9
       }
     };
-    
-    // Save the API key to localStorage for persistence
-    localStorage.setItem('elevenlabs-api-key', this.config.elevenLabsApiKey);
     
     this.synthesis = window.speechSynthesis;
     this.initializeServices();
@@ -292,10 +289,9 @@ export class EnhancedVoiceService {
     debugLogger.info('ENHANCED_VOICE', 'Language switched successfully');
   }
 
+  // This method is now deprecated - API keys are managed centrally
   public setElevenLabsApiKey(apiKey: string): void {
-    this.config.elevenLabsApiKey = apiKey;
-    localStorage.setItem('elevenlabs-api-key', apiKey);
-    debugLogger.info('ENHANCED_VOICE', 'ElevenLabs API key updated');
+    debugLogger.warn('ENHANCED_VOICE', 'setElevenLabsApiKey is deprecated - API keys are managed in Supabase');
   }
 
   public setUserInfo(name: string, gender: 'male' | 'female'): void {
@@ -369,13 +365,11 @@ export class EnhancedVoiceService {
     try {
       this.updateState({ isSpeaking: true });
       
-      // Try ElevenLabs first if API key is available
-      if (this.config.elevenLabsApiKey) {
-        const success = await this.speakWithElevenLabs(text);
-        if (success) {
-          this.updateState({ isSpeaking: false });
-          return;
-        }
+      // Try ElevenLabs first if available
+      const success = await this.speakWithElevenLabs(text);
+      if (success) {
+        this.updateState({ isSpeaking: false });
+        return;
       }
       
       // Fallback to enhanced browser TTS
@@ -391,7 +385,12 @@ export class EnhancedVoiceService {
 
   private async speakWithElevenLabs(text: string): Promise<boolean> {
     try {
-      if (!this.config.elevenLabsApiKey) return false;
+      // Get API key from centralized service
+      const elevenLabsApiKey = await apiKeyService.getElevenLabsKey();
+      if (!elevenLabsApiKey || elevenLabsApiKey === 'demo-key' || elevenLabsApiKey === 'demo-key-placeholder') {
+        debugLogger.info('ENHANCED_VOICE', 'ElevenLabs API key not configured, falling back to browser TTS');
+        return false;
+      }
       
       const voiceId = this.config.voices[this.currentState.currentLanguage].elevenLabs;
       
@@ -400,7 +399,7 @@ export class EnhancedVoiceService {
         headers: {
           'Accept': 'audio/mpeg',
           'Content-Type': 'application/json',
-          'xi-api-key': this.config.elevenLabsApiKey
+          'xi-api-key': elevenLabsApiKey
         },
         body: JSON.stringify({
           text,
@@ -713,14 +712,18 @@ export class EnhancedVoiceService {
   }
 
   private async callEnhancedAI(text: string, healthcareContext?: string): Promise<string> {
-    // Use Meta Llama 3.1 70B - Superior open-source model for medical reasoning
-    const openRouterConfig = {
-      apiKey: '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',
-      model: 'openai/gpt-4o-mini', // Using reliable OpenAI model for medical reasoning
-      baseUrl: 'https://openrouter.ai/api/v1'
-    };
-
     try {
+      // Get OpenRouter API key from centralized service
+      const apiKey = await apiKeyService.getOpenRouterKey();
+      if (!apiKey) {
+        throw new Error('OpenRouter API key not configured in system.');
+      }
+
+      const openRouterConfig = {
+        apiKey,
+        model: 'openai/gpt-4o-mini', // Using reliable OpenAI model for medical reasoning
+        baseUrl: 'https://openrouter.ai/api/v1'
+      };
       // Create gender-specific prompts with proper terms
       const genderSpecificTerms = this.userInfo.gender === 'female' 
         ? (this.currentState.currentLanguage === 'ar' 
