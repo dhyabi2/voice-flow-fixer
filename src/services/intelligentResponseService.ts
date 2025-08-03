@@ -246,9 +246,15 @@ SAFETY PROTOCOL:
 
 ${perplexityContext ? `\n**📊 Current Information:** ${perplexityContext}` : ''}`;
 
+    // Check if we have the OpenRouter API key configured
+    const storedApiKey = localStorage.getItem('openrouter_api_key');
+    if (!storedApiKey) {
+      throw new Error('OpenRouter API key not configured. Please set it in the settings.');
+    }
+
     const openRouterConfig = {
-      apiKey: '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',
-      model: 'openai/gpt-4.1-nano',
+      apiKey: storedApiKey,
+      model: 'openai/gpt-4o-mini',
       baseUrl: 'https://openrouter.ai/api/v1'
     };
 

@@ -24,13 +24,20 @@ interface VoiceSettingsProps {
 export function VoiceSettingsPanel({ settings, onSettingsChange, currentLanguage, onElevenLabsApiKeyChange }: VoiceSettingsProps) {
   const { t } = useTranslation(currentLanguage);
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
+  const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+  const [showElevenLabsApiKey, setShowElevenLabsApiKey] = useState(false);
+  const [showOpenRouterApiKey, setShowOpenRouterApiKey] = useState(false);
 
-  // Load saved API key from localStorage
+  // Load saved API keys from localStorage
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('elevenlabs-api-key');
-    if (savedApiKey) {
-      setElevenLabsApiKey(savedApiKey);
+    const savedElevenLabsKey = localStorage.getItem('elevenlabs-api-key');
+    if (savedElevenLabsKey) {
+      setElevenLabsApiKey(savedElevenLabsKey);
+    }
+    
+    const savedOpenRouterKey = localStorage.getItem('openrouter_api_key');
+    if (savedOpenRouterKey) {
+      setOpenRouterApiKey(savedOpenRouterKey);
     }
   }, []);
 
@@ -47,11 +54,17 @@ export function VoiceSettingsPanel({ settings, onSettingsChange, currentLanguage
     ]
   };
 
-  const handleApiKeyChange = (apiKey: string) => {
+  const handleElevenLabsApiKeyChange = (apiKey: string) => {
     setElevenLabsApiKey(apiKey);
+    localStorage.setItem('elevenlabs-api-key', apiKey);
     if (onElevenLabsApiKeyChange) {
       onElevenLabsApiKeyChange(apiKey);
     }
+  };
+
+  const handleOpenRouterApiKeyChange = (apiKey: string) => {
+    setOpenRouterApiKey(apiKey);
+    localStorage.setItem('openrouter_api_key', apiKey);
   };
 
   return (
@@ -63,6 +76,39 @@ export function VoiceSettingsPanel({ settings, onSettingsChange, currentLanguage
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* OpenRouter API Key Section */}
+        <div className="space-y-2">
+          <Label htmlFor="openrouter-api-key" className="flex items-center gap-2">
+            <Key className="h-4 w-4" />
+            {currentLanguage === 'ar' ? 'مفتاح OpenRouter API' : 'OpenRouter API Key'}
+          </Label>
+          <div className="relative">
+            <Input
+              id="openrouter-api-key"
+              type={showOpenRouterApiKey ? 'text' : 'password'}
+              value={openRouterApiKey}
+              onChange={(e) => handleOpenRouterApiKeyChange(e.target.value)}
+              placeholder={currentLanguage === 'ar' ? 'أدخل مفتاح OpenRouter API' : 'Enter your OpenRouter API key'}
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1 h-8 w-8 p-0"
+              onClick={() => setShowOpenRouterApiKey(!showOpenRouterApiKey)}
+            >
+              {showOpenRouterApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {currentLanguage === 'ar' 
+              ? 'مطلوب لاستخدام الذكاء الاصطناعي في المحادثات'
+              : 'Required for AI-powered conversations'
+            }
+          </p>
+        </div>
+
         {/* ElevenLabs API Key Section */}
         <div className="space-y-2">
           <Label htmlFor="elevenlabs-api-key" className="flex items-center gap-2">
@@ -72,9 +118,9 @@ export function VoiceSettingsPanel({ settings, onSettingsChange, currentLanguage
           <div className="relative">
             <Input
               id="elevenlabs-api-key"
-              type={showApiKey ? 'text' : 'password'}
+              type={showElevenLabsApiKey ? 'text' : 'password'}
               value={elevenLabsApiKey}
-              onChange={(e) => handleApiKeyChange(e.target.value)}
+              onChange={(e) => handleElevenLabsApiKeyChange(e.target.value)}
               placeholder={currentLanguage === 'ar' ? 'أدخل مفتاح API الخاص بك' : 'Enter your API key'}
               className="pr-10"
             />
@@ -83,9 +129,9 @@ export function VoiceSettingsPanel({ settings, onSettingsChange, currentLanguage
               variant="ghost"
               size="sm"
               className="absolute right-1 top-1 h-8 w-8 p-0"
-              onClick={() => setShowApiKey(!showApiKey)}
+              onClick={() => setShowElevenLabsApiKey(!showElevenLabsApiKey)}
             >
-              {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showElevenLabsApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
